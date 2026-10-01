@@ -15,10 +15,14 @@ jobs:
       - uses: actions/checkout@3d3c42e5aac5ba805825da76410c181273ba90b1 # v7.0.1
         with:
           persist-credentials: false
+      - name: Select Xcode 26 for Icon Composer and Liquid Glass
+        run: sudo xcode-select --switch /Applications/Xcode_26.3.app/Contents/Developer
       - name: Core integration and security tests
         run: swift test
       - name: Release publication guards (no credentials)
         run: python3 Tests/ReleaseScriptsTests.py
+      - name: Menu-bar drag and drop checks
+        run: bash Scripts/test-menu-bar.sh
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Universal release build (unsigned)

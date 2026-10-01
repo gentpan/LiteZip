@@ -24,4 +24,7 @@ make -C zstd-1.5.7/programs -j4 zstd \
   LDFLAGS='-arch arm64 -arch x86_64 -mmacosx-version-min=13.0'
 ```
 
-The tool is bundled because upstream 7-Zip reads ZSTD but does not create it. Other formats use 7-Zip.
+The tool is bundled because upstream 7-Zip reads ZSTD but does not create it.
+Additional stream formats use standalone universal engines documented in
+[Formats/README.md](Formats/README.md). WIM uses 7-Zip; ISO and AAR use native
+macOS components.

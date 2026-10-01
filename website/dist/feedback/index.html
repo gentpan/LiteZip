@@ -1,0 +1,57 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0064e0">
+  <title>用户反馈 — LiteZip</title>
+  <link rel="canonical" href="https://litezip.app/feedback/">
+  <meta property="og:url" content="https://litezip.app/feedback/">
+  <meta name="description" content="向 LiteZip 反馈问题、提出功能建议或咨询使用问题，通过 GitHub Issues 跟进处理进展。">
+  <meta property="og:title" content="用户反馈 — LiteZip"><meta property="og:description" content="向 LiteZip 反馈问题、提出功能建议或咨询使用问题，通过 GitHub Issues 跟进处理进展。"><meta property="og:type" content="website">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png"><link rel="icon" type="image/png" sizes="64x64" href="/assets/logo-64.png"><link rel="apple-touch-icon" sizes="180x180" href="/assets/logo-180.png">
+  <link rel="stylesheet" href="/styles.css"><script src="/site.js" defer></script>
+  <script defer src="https://tongji.giantaccel.com/script.js" data-website-id="915f2f7f-841b-4605-a82c-20114fa4912c"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+<header class="header"><a class="brand" href="/" aria-label="LiteZip 首页"><img src="/assets/logo-256.png" width="48" height="48" alt=""><span>LiteZip</span></a><nav aria-label="主导航"><a href="/#features">功能</a><a href="/#formats">支持格式</a><a href="/#faq">常见问题</a><a href="/feedback/" aria-current="page">用户反馈</a><a href="/changelog/">更新日志</a></nav><a class="nav-download" href="/#download">下载 Mac 版</a></header>
+  <main id="main">
+    <section class="page-intro wrap" aria-labelledby="page-title">
+      <p class="eyebrow">让 LiteZip 更顺手。</p>
+      <h1 id="page-title">你的反馈，<br><span>我们认真收好。</span></h1>
+      <p class="page-description">遇到了问题，或想到了一个好点子？<br>告诉我们，一起把这个小工具做得更好。</p>
+    </section>
+    <div class="feedback-layout wrap">
+      <section class="feedback-panel" aria-labelledby="form-title">
+        <h2 id="form-title">说说你的想法。</h2>
+        <p class="panel-description">先在这里整理反馈，再前往 GitHub 确认提交。</p>
+        <form id="feedback-form" hidden>
+          <div class="field"><label for="feedback-type">反馈类型</label><select id="feedback-type" name="type"><option value="bug">问题反馈</option><option value="feature">功能建议</option><option value="question">使用咨询</option></select></div>
+          <div class="field"><label for="feedback-title">一句话概括 <span class="required">必填</span></label><input id="feedback-title" name="title" required maxlength="120" placeholder="例如：带密码的 ZIP 解压失败" autocomplete="off"></div>
+          <div class="field"><label for="feedback-description" id="description-label">问题描述 <span class="required">必填</span></label><textarea id="feedback-description" name="description" required maxlength="4000" rows="5" placeholder="发生了什么？你原本期望的结果是什么？"></textarea></div>
+          <div class="field" id="steps-field"><label for="feedback-steps">复现步骤 <span class="optional">选填</span></label><textarea id="feedback-steps" name="steps" maxlength="3000" rows="3" placeholder="1. 打开 LiteZip&#10;2. 拖入压缩包&#10;3. …"></textarea></div>
+          <div class="field-row">
+            <div class="field"><label for="feedback-version">LiteZip 版本 <span class="optional">选填</span></label><input id="feedback-version" name="version" maxlength="60" placeholder="例如：0.5.0"></div>
+            <div class="field"><label for="feedback-macos">macOS 版本 <span class="optional">选填</span></label><input id="feedback-macos" name="macos" maxlength="60" placeholder="例如：macOS 15.0"></div>
+          </div>
+          <p class="form-note" id="feedback-note">需要 GitHub 账号。提交后的 Issue 公开可见，请勿填写密码或私人文件内容；截图可在 GitHub 提交时添加。</p>
+          <button class="button primary" type="submit" aria-describedby="feedback-note">生成 GitHub 反馈 <span aria-hidden="true">↗</span></button>
+          <section class="feedback-result" id="feedback-result" hidden aria-labelledby="result-title">
+            <h3 id="result-title">反馈已整理，等待你提交。</h3>
+            <p id="feedback-status" role="status"></p>
+            <div id="feedback-copy" hidden><label for="feedback-body">反馈正文</label><textarea id="feedback-body" readonly rows="8"></textarea><button class="copy-button" type="button" id="copy-feedback">复制反馈正文</button><p id="copy-status" role="status"></p></div>
+            <a class="button primary" id="github-submit" href="https://github.com/gentpan/LiteZip/issues/new" target="_blank" rel="noopener noreferrer">前往 GitHub 提交 <span aria-hidden="true">↗</span></a>
+          </section>
+        </form>
+        <noscript><p class="form-note">请直接前往 GitHub 创建反馈，填写问题或建议并提交。</p><a class="button primary" href="https://github.com/gentpan/LiteZip/issues/new" target="_blank" rel="noopener noreferrer">在 GitHub 提交反馈 ↗</a></noscript>
+      </section>
+      <aside class="feedback-aside" aria-label="反馈帮助">
+        <div class="support-card"><span class="feature-number">GITHUB ISSUES</span><h2>先看看，<br>是否已有反馈。</h2><p>同一个问题可以在已有 Issue 下补充信息，也能查看处理进展。</p><a class="text-link" href="https://github.com/gentpan/LiteZip/issues" target="_blank" rel="noopener">查看已有反馈 ↗</a></div>
+        <ol class="feedback-steps"><li><span>01</span><div><h3>整理问题或建议</h3><p>提供清楚的描述，问题最好附上复现步骤。</p></div></li><li><span>02</span><div><h3>在 GitHub 确认提交</h3><p>我们会预填标题和内容，你可以继续补充截图。</p></div></li><li><span>03</span><div><h3>关注后续进展</h3><p>通过 Issue 讨论、补充信息，并查看处理结果。</p></div></li></ol>
+        <p class="aside-note">想知道最近有哪些变化？<br><a class="text-link" href="/changelog/">查看更新日志 →</a></p>
+      </aside>
+    </div>
+
+  </main>
+<footer class="footer wrap"><a class="brand" href="/"><img src="/assets/logo-256.png" width="40" height="40" alt=""><span>LiteZip</span></a><p>文件，轻装出发。</p><div><a href="/feedback/">用户反馈</a><a href="/changelog/">更新日志</a><a href="https://github.com/gentpan/LiteZip" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/gentpan/LiteZip/blob/main/LICENSE" target="_blank" rel="noopener">MIT 许可</a></div></footer>
+</body>
+</html>

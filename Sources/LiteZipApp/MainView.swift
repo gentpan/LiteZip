@@ -6,6 +6,7 @@ import LiteZipCore
 struct MainView: View {
     @ObservedObject var model: AppModel
     @EnvironmentObject private var preferences: AppPreferences
+    @Environment(\.openWindow) private var openWindow
     @State private var targeted = false
     private var levels: [CompressionLevel] { CompressionLevel.allCases.filter { $0 != .store || model.format.supportsStore } }
     private var levelIndex: Binding<Double> {
@@ -49,7 +50,7 @@ struct MainView: View {
                             Button("预览内容") { model.browserURL = model.files[0] }
                         }
                         Spacer()
-                        Button(model.mode == .compress ? (model.separateArchives ? "分别压缩…" : model.format == .dmg ? "制作 DMG…" : "压缩…") : model.diskImagesOnly ? "在 Finder 打开" : "解压…", action: model.chooseDestination)
+                        Button(model.mode == .compress ? (model.separateArchives ? "分别压缩…" : [.dmg, .iso].contains(model.format) ? "制作 \(model.format.title)…" : "压缩…") : model.diskImagesOnly ? "在 Finder 打开" : "解压…", action: model.chooseDestination)
                             .buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: [.command])
                             .disabled(model.files.isEmpty || model.validationMessage != nil)
                     }
@@ -75,18 +76,14 @@ struct MainView: View {
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .preferredColorScheme(preferences.appearance.colorScheme)
+        .onAppear { model.openMainWindow = { openWindow(id: "main") } }
         .toolbar {
-            ToolbarItem(placement: .principal) {
-                Picker("操作", selection: $model.mode) { ForEach(AppModel.Mode.allCases) { Text($0.rawValue).tag($0) } }
-                    .pickerStyle(.segmented).frame(width: 136)
-            }
-            ToolbarItem {
-                if model.mode == .compress {
-                    Picker("压缩格式", selection: $model.format) { ForEach(ArchiveFormat.allCases.filter(\.canCreate)) { Text($0.title).tag($0) } }
-                        .pickerStyle(.menu).labelsHidden().frame(width: 108).help("选择压缩格式")
-                } else {
-                    Button(action: model.chooseFiles) { Label("选择压缩包", systemImage: "plus") }
-                }
+            if #available(macOS 26.0, *) {
+                modeToolbarItem.sharedBackgroundVisibility(.hidden)
+                formatToolbarItem.sharedBackgroundVisibility(.hidden)
+            } else {
+                modeToolbarItem
+                formatToolbarItem
             }
         }
         .onChange(of: model.format) { _ in model.formatChanged() }
@@ -99,20 +96,84 @@ struct MainView: View {
             Button("好", role: .cancel) {}
         } message: { Text(model.errorMessage ?? "") }
     }
+    private var modeToolbarItem: some ToolbarContent {
+        ToolbarItem(placement: .principal) {
+            HStack(spacing: 2) {
+                ForEach(AppModel.Mode.allCases) { mode in
+                    Button { model.mode = mode } label: {
+                        Text(mode.rawValue)
+                            .font(.system(size: 13, weight: model.mode == mode ? .semibold : .regular))
+                            .padding(.horizontal, 14)
+                            .frame(height: 28)
+                            .background {
+                                if model.mode == mode {
+                                    Capsule().fill(.primary.opacity(0.12))
+                                }
+                            }
+                    }
+                    .buttonStyle(.plain)
+                    .accessibilityAddTraits(model.mode == mode ? [.isSelected] : [])
+                }
+            }
+            .padding(3)
+            .modifier(ToolbarGlass())
+            .fixedSize()
+            .accessibilityElement(children: .contain)
+            .accessibilityLabel("操作")
+        }
+    }
+    private var formatToolbarItem: some ToolbarContent {
+        ToolbarItem {
+            if model.mode == .compress {
+                Menu {
+                    Picker("压缩格式", selection: $model.format) {
+                        ForEach(ArchiveFormat.allCases.filter(\.canCreate)) { format in
+                            Label { Text(format.title + " · " + format.menuSummary) } icon: {
+                                Image(nsImage: format.menuBadge)
+                            }.tag(format).accessibilityLabel(format.title + "，" + format.menuSummary)
+                        }
+                    }.pickerStyle(.inline).labelsHidden()
+                } label: {
+                    HStack(spacing: 7) {
+                        Image(nsImage: model.format.menuBadge)
+                            .resizable().scaledToFit().frame(width: 70, height: 22)
+                            .accessibilityHidden(true)
+                        Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
+                            .foregroundStyle(.secondary)
+                    }
+                    .padding(.horizontal, 12)
+                    .frame(height: 34)
+                    .contentShape(Capsule())
+                }
+                    .menuStyle(.button)
+                    .buttonStyle(.plain)
+                    .menuIndicator(.hidden)
+                    .modifier(ToolbarGlass())
+                    .fixedSize()
+                    .accessibilityLabel("压缩格式：" + model.format.title)
+                    .help("选择压缩格式。TAR 仅打包；TAR.GZ、TAR.BZ2、TAR.XZ、TAR.ZST 会在打包后压缩。")
+            } else {
+                Button(action: model.chooseFiles) { Label("选择压缩包", systemImage: "plus") }
+                    .buttonStyle(.plain)
+                    .padding(.horizontal, 12).frame(height: 34)
+                    .modifier(ToolbarGlass())
+            }
+        }
+    }
     private var compressionSettings: some View {
         VStack(alignment: .leading, spacing: 16) {
             VStack(alignment: .leading, spacing: 10) {
                 HStack {
                     Text("压缩方式：").foregroundStyle(.secondary)
-                    Text(model.format == .tar ? "仅打包" : model.level.title).fontWeight(.medium)
+                    Text(model.format == .tar ? "仅打包" : model.format == .iso ? "制作映像，不压缩" : model.format == .snappy ? "固定压缩方式" : model.level.title).fontWeight(.medium)
                     Spacer()
                     Image(systemName: "archivebox").foregroundStyle(.tint).accessibilityHidden(true)
                 }
                 Slider(value: levelIndex, in: 0...Double(levels.count - 1), step: 1)
-                    .disabled(model.format == .tar).accessibilityLabel("压缩等级").accessibilityValue(model.level.title)
+                    .disabled(!model.format.supportsCompressionLevel).accessibilityLabel("压缩等级").accessibilityValue(model.level.title)
                 HStack {
                     ForEach(levels) { level in
-                        Text(level.title).font(.caption).foregroundStyle(model.level == level && model.format != .tar ? Color.primary : Color.secondary)
+                        Text(level.title).font(.caption).foregroundStyle(model.level == level && model.format.supportsCompressionLevel ? Color.primary : Color.secondary)
                             .frame(maxWidth: .infinity, alignment: level == levels.first ? .leading : level == levels.last ? .trailing : .center)
                     }
                 }
@@ -141,6 +202,12 @@ struct MainView: View {
             }
             if model.format == .dmg {
                 Text("保留文件权限、扩展属性与符号链接；完成后可在 Finder 挂载。存储等级生成只读映像。").font(.caption).foregroundStyle(.secondary)
+            }
+            if model.format == .iso {
+                Text("制作 ISO / Joliet / UDF 光盘映像，不压缩、不加密；支持预览、解压和在 Finder 挂载。").font(.caption).foregroundStyle(.secondary)
+            }
+            if model.format == .aar {
+                Text("Apple 归档：最快使用 LZ4，快速和标准使用 LZFSE，高压缩和极限使用 LZMA；存储仅打包。").font(.caption).foregroundStyle(.secondary)
             }
             if !model.volumeSize.isEmpty && model.format.supportsVolumes {
                 Text(model.format == .rar ? "分卷保存到 .parts 文件夹，打开 .part1.rar 首卷（编号可能补零）。大小按 1 MB = 1024² 字节计算。" : "分卷保存到 .parts 文件夹。保留整组文件，打开 .001 解压。大小按 1 MB = 1024² 字节计算。")
@@ -199,6 +266,18 @@ struct MainView: View {
             }
             if model.files.count > 3 { Text("另有 \(model.files.count - 3) 个项目").font(.caption).foregroundStyle(.secondary) }
             if model.hasMixedFiles { Text("文件与压缩包混合，可在标题栏选择操作。").font(.caption).foregroundStyle(.secondary) }
+        }
+    }
+}
+
+/// One fitted material surface per control; toolbar backplates are hidden above.
+private struct ToolbarGlass: ViewModifier {
+    func body(content: Content) -> some View {
+        if #available(macOS 26.0, *) {
+            content.glassEffect(.regular.interactive(), in: Capsule())
+        } else {
+            content.background(.thinMaterial, in: Capsule())
+                .overlay(Capsule().strokeBorder(.primary.opacity(0.12), lineWidth: 0.5))
         }
     }
 }

@@ -6,17 +6,25 @@ public struct ArchiveService: ArchiveServiceProtocol {
     public let maximumExtractedBytes: Int64
     public let zstdURL: URL
     public let rarURL: URL?
-    public init(engineURL: URL, zstdURL: URL? = nil, rarURL: URL? = nil, maximumExtractedBytes: Int64 = 100 * 1_024 * 1_024 * 1_024) {
-        self.engineURL = engineURL; self.zstdURL = zstdURL ?? engineURL.deletingLastPathComponent().appendingPathComponent("zstd"); self.rarURL = rarURL; self.maximumExtractedBytes = maximumExtractedBytes
+    public let additionalEnginesURL: URL
+    public init(engineURL: URL, zstdURL: URL? = nil, rarURL: URL? = nil, additionalEnginesURL: URL? = nil, maximumExtractedBytes: Int64 = 100 * 1_024 * 1_024 * 1_024) {
+        self.engineURL = engineURL; self.zstdURL = zstdURL ?? engineURL.deletingLastPathComponent().appendingPathComponent("zstd"); self.rarURL = rarURL; self.additionalEnginesURL = additionalEnginesURL ?? engineURL.deletingLastPathComponent(); self.maximumExtractedBytes = maximumExtractedBytes
     }
     public func list(archive: URL, password: String? = nil, control: OperationControl = .init()) async throws -> [ArchiveEntry] {
         try await background(control: control) {
             if ArchiveFormat.detect(archive) == .dmg { return try diskImageEntries(archive, password: password, control: control) }
+            if ArchiveFormat.detect(archive) == .aar { return try appleArchiveEntries(archive, control: control) }
             return try withPreparedInput(archive, password: password, control: control) { _, entries in entries }
         }
     }
     private func listing(archive: URL, password: String?, control: OperationControl) throws -> [ArchiveEntry] {
         let archive = try validatedInput(archive)
+        if let format = ArchiveFormat.detect(archive), format.standaloneEngine != nil {
+            let size = try decodeStandalone(archive, format: format, control: control) { _ in }
+            let entry = ArchiveEntry(path: ArchiveFormat.baseName(archive), sourcePath: "", size: size)
+            _ = try ArchiveSafety.validate(entries: [entry], maximumBytes: maximumExtractedBytes)
+            return [entry]
+        }
         let data = try ProcessRunner(executable: engineURL).run(["l", "-slt", "-ba", "-bd", "-bse2", "-sccUTF-8", "--", archive.path], password: password, control: control)
         guard let text = String(data: data, encoding: .utf8) else { throw ArchiveError.ambiguousListing }
         let streamFormat = ArchiveFormat.detect(archive)
@@ -27,6 +35,8 @@ public struct ArchiveService: ArchiveServiceProtocol {
     }
     public func test(archive: URL, password: String? = nil, control: OperationControl = .init()) async throws {
         try await background(control: control) {
+            if ArchiveFormat.detect(archive) == .aar { _ = try appleArchiveEntries(archive, control: control, verifyData: true); return }
+            if ArchiveFormat.detect(archive)?.standaloneEngine != nil { _ = try listing(archive: archive, password: password, control: control); return }
             if ArchiveFormat.detect(archive) == .dmg {
                 try verifyDiskImage(archive, password: password, control: control); return
             }
@@ -41,6 +51,8 @@ public struct ArchiveService: ArchiveServiceProtocol {
             if options.format == .dmg {
                 return try createDiskImage(files: files, destination: destination, options: options, control: control, progress: progress)
             }
+            if options.format == .iso { return try createISO(files: files, destination: destination, options: options, control: control, progress: progress) }
+            if options.format == .aar { return try createAppleArchive(files: files, destination: destination, options: options, control: control, progress: progress) }
             if options.format == .rar {
                 guard let rarURL, FileManager.default.isExecutableFile(atPath: rarURL.path) else { throw ArchiveError.rarEngineMissing }
                 if let password = options.password, password.utf16.count > 127 { throw ArchiveError.rarPasswordLength }
@@ -108,7 +120,9 @@ public struct ArchiveService: ArchiveServiceProtocol {
                 if options.format == .zip { arguments.append("-mem=AES256") }
                 if options.format == .sevenZip { arguments.append("-mhe=on") }
             }
-            if options.format == .rar {
+            if options.format.standaloneEngine != nil {
+                try encodeStandalone(canonicalFiles[0], destination: partial, options: options, control: control)
+            } else if options.format == .rar {
                 let input = staging.appendingPathComponent("inputs", isDirectory: true)
                 progress(ArchiveProgress(totalBytes: total, currentFile: "准备 RAR 文件快照…"))
                 try prepareSourceSnapshot(canonicalFiles, at: input, excludeMacResources: options.excludeMacResources, control: control)
@@ -141,7 +155,7 @@ public struct ArchiveService: ArchiveServiceProtocol {
                 guard let first = parts.first(where: { RARVolume($0)?.index == 1 }) else { throw ArchiveError.missingVolume }
                 readable = first
             } else { readable = partial.appendingPathExtension("001") }
-            if options.verifyArchive {
+            if options.verifyArchive && options.format.standaloneEngine == nil {
                 progress(ArchiveProgress(processedBytes: total, totalBytes: total, currentFile: "正在验证完整性…"))
                 _ = try runner.run(["t", "-bd", "-bso0", "-bse2", "--", readable.path], password: options.password, control: control)
             }
@@ -156,6 +170,7 @@ public struct ArchiveService: ArchiveServiceProtocol {
     public func extract(archive: URL, destination: URL, password: String? = nil, control: OperationControl = .init(), progress: @escaping @Sendable (ArchiveProgress) -> Void = { _ in }) async throws -> URL {
         try await background(control: control) {
             guard ArchiveFormat.detect(archive) != .dmg else { throw ArchiveError.diskImageMountRequired }
+            if ArchiveFormat.detect(archive) == .aar { return try extractAppleArchive(archive, destination: destination, control: control, progress: progress) }
             let fm = FileManager.default, directory = destination.deletingLastPathComponent()
             let staging = try makeStaging(in: directory)
             defer { StagingRegistry.remove(staging) }
@@ -217,6 +232,15 @@ public struct ArchiveService: ArchiveServiceProtocol {
         guard descriptor >= 0 else { throw errno == ENOSPC ? ArchiveError.diskFull : ArchiveError.permissionDenied }
         let handle = FileHandle(fileDescriptor: descriptor, closeOnDealloc: true)
         defer { try? handle.close() }
+        if let format = ArchiveFormat.detect(archive), format.standaloneEngine != nil {
+            let written = try decodeStandalone(archive, format: format, control: control) { data in
+                do { try handle.write(contentsOf: data) }
+                catch { throw (error as NSError).code == ENOSPC ? ArchiveError.diskFull : ArchiveError.permissionDenied }
+                onBytes(data.count)
+            }
+            guard written == entry.size else { throw ArchiveError.corruptedArchive }
+            return
+        }
         var written: Int64 = 0
         let selector = entry.sourcePath.isEmpty ? [] : ["-i!" + entry.sourcePath]
         _ = try ProcessRunner(executable: engineURL).run(["x", "-so", "-bd", "-bb0", "-bso0", "-bse2", "-bsp0", "-spd"] + selector + ["--", archive.path], password: password, control: control) { data in

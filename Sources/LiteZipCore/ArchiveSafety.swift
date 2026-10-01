@@ -54,21 +54,23 @@ public enum ArchiveSafety {
         func append() throws {
             guard !fields.isEmpty else { return }
             guard let path = fields["Path"] ?? fallbackPath, let rawSize = fields["Size"] else { throw ArchiveError.ambiguousListing }
-            let known = Int64(rawSize) != nil
+            let attributes = fields["Attributes"] ?? ""
+            let mode = fields["Mode"] ?? attributes.split(separator: " ").last.map(String.init) ?? ""
+            let isDirectory = fields["Folder"] == "+" || attributes.hasPrefix("D") || mode.hasPrefix("d")
+            let known = Int64(rawSize) != nil || (rawSize.isEmpty && isDirectory)
             guard known || (rawSize.isEmpty && fallbackPath != nil) else { throw ArchiveError.ambiguousListing }
             let size = Int64(rawSize) ?? 0
             guard size >= 0 else { throw ArchiveError.ambiguousListing }
-            let attributes = fields["Attributes"] ?? ""
-            let mode = fields["Mode"] ?? attributes.split(separator: " ").last.map(String.init) ?? ""
-            if fields.contains(where: { $0.key.lowercased().contains("link") && !$0.value.isEmpty }) || mode.hasPrefix("l") || mode.hasPrefix("b") || mode.hasPrefix("c") || mode.hasPrefix("p") || mode.hasPrefix("s") {
+            // ISO/WIM print a regular inode link count as "Links = 1".
+            // Link targets and multiple links on files remain unsupported.
+            if fields.contains(where: { $0.key != "Links" && $0.key.lowercased().contains("link") && !$0.value.isEmpty }) || (!isDirectory && (Int(fields["Links"] ?? "") ?? 1) > 1) || mode.hasPrefix("l") || mode.hasPrefix("b") || mode.hasPrefix("c") || mode.hasPrefix("p") || mode.hasPrefix("s") {
                 throw ArchiveError.linksUnsupported
             }
             var normalized = path
             while normalized.hasPrefix("./") { normalized = String(normalized.dropFirst(2)) }
-            let isDirectory = fields["Folder"] == "+" || attributes.hasPrefix("D") || mode.hasPrefix("d")
             if isDirectory && normalized.hasSuffix("/") { normalized.removeLast() }
             if normalized.isEmpty && isDirectory { fields.removeAll(keepingCapacity: true); return }
-            entries.append(ArchiveEntry(path: normalized, sourcePath: fields["Path"] ?? "", size: size, sizeKnown: known, isDirectory: fields["Folder"] == "+" || attributes.hasPrefix("D") || mode.hasPrefix("d"), encrypted: fields["Encrypted"] == "+"))
+            entries.append(ArchiveEntry(path: normalized, sourcePath: fields["Path"] ?? "", size: size, sizeKnown: known, isDirectory: isDirectory, encrypted: fields["Encrypted"] == "+"))
             fields.removeAll(keepingCapacity: true)
         }
         for raw in text.components(separatedBy: "\n") {

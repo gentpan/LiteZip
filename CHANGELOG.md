@@ -1,5 +1,16 @@
 # 更新记录
 
+## 0.5.0 开发预览
+
+- 全新蓝色角色 App 图标与 Finder 文件图标；压缩格式以不同颜色的文字徽章展示。
+- 紧凑工具栏保留原生 Liquid Glass，调整控件尺寸与选中状态。
+- 新增菜单栏快捷压缩，支持拖入文件或文件夹、切换格式、选择保存位置及查看任务进度。
+- 新增 ISO、AAR、WIM 制作、预览、校验与解压；ISO 支持 Finder 挂载，AAR 使用 macOS 原生 Apple Archive。
+- 新增 LZIP、LZ4、Brotli、LRZIP、Snappy 单文件压缩与解压，引擎随 App 提供。
+- 增加 GZIP、BZIP2 等扩展名别名，完善归档路径、输出大小与损坏数据检查。
+
+Developer ID 签名与 Apple 公证已完成，App 已附上公证凭据，Gatekeeper 验证通过。macOS 13+，Apple Silicon／Intel 通用构建。RAR 创建仍需单独连接官方引擎。
+
 ## 0.4.0 开发预览
 
 - 新增 TAR.BZ2、TAR.XZ、TAR.ZST 制作、预览、校验与解压，识别 TGZ、TBZ/TBZ2、TXZ、TZST 别名。

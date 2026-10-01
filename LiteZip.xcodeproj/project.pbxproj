@@ -8,12 +8,36 @@
 
 /* Begin PBXBuildFile section */
 		01443A0D924C18D6A4D0B83A /* FinderSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EC6913B7859ACFFAFC599A0 /* FinderSync.swift */; };
+		29BA4D893D461514D0CFB55E /* Document-dmg.icns in Resources */ = {isa = PBXBuildFile; fileRef = 5EA964873029BFEC69F5D6F9 /* Document-dmg.icns */; };
+		3EFF6D987CF12EB266A72EF5 /* Licenses in Resources */ = {isa = PBXBuildFile; fileRef = A99F99543B02A4B04399CE70 /* Licenses */; };
+		3F8668B2025968244C5389AD /* Document-gzip.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1C1DC47AB1AFB37BB4D8E136 /* Document-gzip.icns */; };
+		3F8EC5972F2E9ED8B46E830E /* Document-tarBzip2.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6A12B993307E9EF9063CCA8F /* Document-tarBzip2.icns */; };
+		3FE72AF19D8E84C0089A9374 /* Document-zip.icns in Resources */ = {isa = PBXBuildFile; fileRef = 721D3A760DA2664E354A0234 /* Document-zip.icns */; };
+		48FA421EF1A06447688CA6EC /* Document-tarGzip.icns in Resources */ = {isa = PBXBuildFile; fileRef = 34113D6586C8971DA64D21FA /* Document-tarGzip.icns */; };
+		4EE35DF63ED30D80F1B0C501 /* Document-bzip2.icns in Resources */ = {isa = PBXBuildFile; fileRef = F4214D7422AC253336F396C7 /* Document-bzip2.icns */; };
 		4FE161CEF7475E4E786A613E /* FinderSync.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A94A9534DE03856279B37C1B /* FinderSync.framework */; };
+		5236E52A276A0AFC451442DB /* SourcePackages in Resources */ = {isa = PBXBuildFile; fileRef = AEC00B13C0A07181602C6D8C /* SourcePackages */; };
+		53A9A88ACF7734EFEF423EAB /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B76692A8C5AC8DE8A9D42E77 /* MenuBarController.swift */; };
 		56DF7359A9A5E674D57B8151 /* LiteZipFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7F4D4074CB82632A41D3E9EF /* LiteZipFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
 		743F75D4B82075656CB8B5B5 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5605A8D30DB1284F17157F79 /* MainView.swift */; };
+		7B3B7C978EAF0983C8029118 /* ThirdPartyNotices.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3DC6491C829D520C8B7CF2B8 /* ThirdPartyNotices.txt */; };
 		8A80261459B5F4F28BB00DEC /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 566B6612429758F32E497C05 /* AppModel.swift */; };
+		8B0459842E77E1AD180D53B2 /* build-format-engines.sh in Resources */ = {isa = PBXBuildFile; fileRef = 96BDCB153006FC4B63A6465C /* build-format-engines.sh */; };
+		9EB19BA6745F6FDA03A216E1 /* Document-tar.icns in Resources */ = {isa = PBXBuildFile; fileRef = 7E3C9E4715B800689E0A867E /* Document-tar.icns */; };
+		A9D277C1A5ACEBD79B4FDF98 /* Document-tarXZ.icns in Resources */ = {isa = PBXBuildFile; fileRef = 0FEEF005F6C074064DAED885 /* Document-tarXZ.icns */; };
+		B613E03DEE476F65F65DC909 /* StatusItemDropTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6BCDFC52095C1E9CB331328 /* StatusItemDropTarget.swift */; };
+		B697998EC6E4F0736D8A8A39 /* Document-sevenZip.icns in Resources */ = {isa = PBXBuildFile; fileRef = ACF8384CBB477A373189EB2F /* Document-sevenZip.icns */; };
+		B69AC2FBEAB630014577F44F /* Document-tarZstd.icns in Resources */ = {isa = PBXBuildFile; fileRef = E52BE33C72B2FE793C0972C6 /* Document-tarZstd.icns */; };
 		BB74C5A17881CB1CF6D00A81 /* ArchiveBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E943D630D176C0DF05FEE7E /* ArchiveBrowserView.swift */; };
+		BF69F78C6451CA55D7FBD997 /* AppIcon.icon in Resources */ = {isa = PBXBuildFile; fileRef = CCD1CD7AB4BA12B128BDE847 /* AppIcon.icon */; };
+		C6AD668A48732AEC1460FDD7 /* Document-rar.icns in Resources */ = {isa = PBXBuildFile; fileRef = C6BE011AD99D4B726C48043B /* Document-rar.icns */; };
+		C6F3FA1E72E83294DA311B32 /* README.md in Resources */ = {isa = PBXBuildFile; fileRef = 291E223A9830808FE21891F5 /* README.md */; };
 		D205AF9048D386CE9E33BD05 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 523966E6CBF0EBF55AAE61B6 /* SettingsView.swift */; };
+		D4E48224268E74CC2FE8F9A3 /* ArchiveFormatIcons.swift in Sources */ = {isa = PBXBuildFile; fileRef = 218566766E9CE76F0C7A7CF7 /* ArchiveFormatIcons.swift */; };
+		DA003FAD93C398245E463E10 /* Document-zstd.icns in Resources */ = {isa = PBXBuildFile; fileRef = FDA71775236C4A0CE0006B59 /* Document-zstd.icns */; };
+		DABAF349763925DD58E88CC1 /* Document-split.icns in Resources */ = {isa = PBXBuildFile; fileRef = 391F4B1E9306C3083C27D6F5 /* Document-split.icns */; };
+		DC6FECF19B45DE5F1D59C428 /* Document-xz.icns in Resources */ = {isa = PBXBuildFile; fileRef = 7698E78D148B7B4C8C6401CC /* Document-xz.icns */; };
+		E15A19FDDF2DA56B85C721F1 /* Document-zipx.icns in Resources */ = {isa = PBXBuildFile; fileRef = 03D86F5FB39620AD6B35A4B1 /* Document-zipx.icns */; };
 		FA110FE1B482A01E810C8530 /* LiteZipCore in Frameworks */ = {isa = PBXBuildFile; productRef = E8A7AA16996EDDBEC4BB83F5 /* LiteZipCore */; };
 		FC644EAD99535E74158FDBC1 /* LiteZipApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8A76FA8A6E7C96A7EF35897 /* LiteZipApp.swift */; };
 /* End PBXBuildFile section */
@@ -43,16 +67,40 @@
 /* End PBXCopyFilesBuildPhase section */
 
 /* Begin PBXFileReference section */
+		03D86F5FB39620AD6B35A4B1 /* Document-zipx.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-zipx.icns"; sourceTree = "<group>"; };
 		0EC6913B7859ACFFAFC599A0 /* FinderSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderSync.swift; sourceTree = "<group>"; };
+		0FEEF005F6C074064DAED885 /* Document-tarXZ.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-tarXZ.icns"; sourceTree = "<group>"; };
+		1C1DC47AB1AFB37BB4D8E136 /* Document-gzip.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-gzip.icns"; sourceTree = "<group>"; };
 		1CF775459AE87452E2015E65 /* LiteZIP */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LiteZIP; path = .; sourceTree = SOURCE_ROOT; };
 		204EB02AE8AD445B7B92A426 /* LiteZip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LiteZip.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		218566766E9CE76F0C7A7CF7 /* ArchiveFormatIcons.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveFormatIcons.swift; sourceTree = "<group>"; };
+		291E223A9830808FE21891F5 /* README.md */ = {isa = PBXFileReference; lastKnownFileType = net.daringfireball.markdown; path = README.md; sourceTree = "<group>"; };
+		34113D6586C8971DA64D21FA /* Document-tarGzip.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-tarGzip.icns"; sourceTree = "<group>"; };
+		391F4B1E9306C3083C27D6F5 /* Document-split.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-split.icns"; sourceTree = "<group>"; };
+		3DC6491C829D520C8B7CF2B8 /* ThirdPartyNotices.txt */ = {isa = PBXFileReference; lastKnownFileType = text; path = ThirdPartyNotices.txt; sourceTree = "<group>"; };
 		3E943D630D176C0DF05FEE7E /* ArchiveBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveBrowserView.swift; sourceTree = "<group>"; };
 		523966E6CBF0EBF55AAE61B6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		5605A8D30DB1284F17157F79 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		566B6612429758F32E497C05 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		5EA964873029BFEC69F5D6F9 /* Document-dmg.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-dmg.icns"; sourceTree = "<group>"; };
+		6A12B993307E9EF9063CCA8F /* Document-tarBzip2.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-tarBzip2.icns"; sourceTree = "<group>"; };
+		721D3A760DA2664E354A0234 /* Document-zip.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-zip.icns"; sourceTree = "<group>"; };
+		7698E78D148B7B4C8C6401CC /* Document-xz.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-xz.icns"; sourceTree = "<group>"; };
+		7E3C9E4715B800689E0A867E /* Document-tar.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-tar.icns"; sourceTree = "<group>"; };
 		7F4D4074CB82632A41D3E9EF /* LiteZipFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LiteZipFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		96BDCB153006FC4B63A6465C /* build-format-engines.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "build-format-engines.sh"; sourceTree = "<group>"; };
+		A6BCDFC52095C1E9CB331328 /* StatusItemDropTarget.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemDropTarget.swift; sourceTree = "<group>"; };
 		A94A9534DE03856279B37C1B /* FinderSync.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FinderSync.framework; path = System/Library/Frameworks/FinderSync.framework; sourceTree = SDKROOT; };
+		A99F99543B02A4B04399CE70 /* Licenses */ = {isa = PBXFileReference; lastKnownFileType = folder; name = Licenses; path = Vendor/Formats/Licenses; sourceTree = SOURCE_ROOT; };
+		ACF8384CBB477A373189EB2F /* Document-sevenZip.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-sevenZip.icns"; sourceTree = "<group>"; };
+		AEC00B13C0A07181602C6D8C /* SourcePackages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SourcePackages; path = Vendor/Formats/SourcePackages; sourceTree = SOURCE_ROOT; };
+		B76692A8C5AC8DE8A9D42E77 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
+		C6BE011AD99D4B726C48043B /* Document-rar.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-rar.icns"; sourceTree = "<group>"; };
+		CCD1CD7AB4BA12B128BDE847 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		E52BE33C72B2FE793C0972C6 /* Document-tarZstd.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-tarZstd.icns"; sourceTree = "<group>"; };
 		E8A76FA8A6E7C96A7EF35897 /* LiteZipApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteZipApp.swift; sourceTree = "<group>"; };
+		F4214D7422AC253336F396C7 /* Document-bzip2.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-bzip2.icns"; sourceTree = "<group>"; };
+		FDA71775236C4A0CE0006B59 /* Document-zstd.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-zstd.icns"; sourceTree = "<group>"; };
 /* End PBXFileReference section */
 
 /* Begin PBXFrameworksBuildPhase section */
@@ -83,6 +131,16 @@
 			name = Frameworks;
 			sourceTree = "<group>";
 		};
+		2C848BF02CCE044C81CD58E2 /* Formats */ = {
+			isa = PBXGroup;
+			children = (
+				A99F99543B02A4B04399CE70 /* Licenses */,
+				291E223A9830808FE21891F5 /* README.md */,
+				AEC00B13C0A07181602C6D8C /* SourcePackages */,
+			);
+			path = Formats;
+			sourceTree = "<group>";
+		};
 		35245A62D2D86EA8CDC54225 /* Sources */ = {
 			isa = PBXGroup;
 			children = (
@@ -100,6 +158,16 @@
 			name = Products;
 			sourceTree = "<group>";
 		};
+		3BB06632DB99ECCEF304B8DC /* Resources */ = {
+			isa = PBXGroup;
+			children = (
+				CCD1CD7AB4BA12B128BDE847 /* AppIcon.icon */,
+				3DC6491C829D520C8B7CF2B8 /* ThirdPartyNotices.txt */,
+				C6AB643CB7A615631604E736 /* DocumentTypes */,
+			);
+			path = Resources;
+			sourceTree = "<group>";
+		};
 		592117DCBD5202EA3B0D0432 /* Packages */ = {
 			isa = PBXGroup;
 			children = (
@@ -113,9 +181,12 @@
 			children = (
 				566B6612429758F32E497C05 /* AppModel.swift */,
 				3E943D630D176C0DF05FEE7E /* ArchiveBrowserView.swift */,
+				218566766E9CE76F0C7A7CF7 /* ArchiveFormatIcons.swift */,
 				E8A76FA8A6E7C96A7EF35897 /* LiteZipApp.swift */,
 				5605A8D30DB1284F17157F79 /* MainView.swift */,
+				B76692A8C5AC8DE8A9D42E77 /* MenuBarController.swift */,
 				523966E6CBF0EBF55AAE61B6 /* SettingsView.swift */,
+				A6BCDFC52095C1E9CB331328 /* StatusItemDropTarget.swift */,
 			);
 			path = LiteZipApp;
 			sourceTree = "<group>";
@@ -125,10 +196,51 @@
 			children = (
 				F87B4E038680EDC3B73F0AD5 /* FinderExtension */,
 				592117DCBD5202EA3B0D0432 /* Packages */,
+				3BB06632DB99ECCEF304B8DC /* Resources */,
+				AEFBF20EC044F2EAE45DB6D0 /* Scripts */,
 				35245A62D2D86EA8CDC54225 /* Sources */,
+				7348AF7D77F18FAF0F511DAA /* Vendor */,
 				06A2AA298603FAC03E501236 /* Frameworks */,
 				3614F012D417C19ACA5AAB8E /* Products */,
 			);
+			sourceTree = "<group>";
+		};
+		7348AF7D77F18FAF0F511DAA /* Vendor */ = {
+			isa = PBXGroup;
+			children = (
+				2C848BF02CCE044C81CD58E2 /* Formats */,
+			);
+			path = Vendor;
+			sourceTree = "<group>";
+		};
+		AEFBF20EC044F2EAE45DB6D0 /* Scripts */ = {
+			isa = PBXGroup;
+			children = (
+				96BDCB153006FC4B63A6465C /* build-format-engines.sh */,
+			);
+			path = Scripts;
+			sourceTree = "<group>";
+		};
+		C6AB643CB7A615631604E736 /* DocumentTypes */ = {
+			isa = PBXGroup;
+			children = (
+				F4214D7422AC253336F396C7 /* Document-bzip2.icns */,
+				5EA964873029BFEC69F5D6F9 /* Document-dmg.icns */,
+				1C1DC47AB1AFB37BB4D8E136 /* Document-gzip.icns */,
+				C6BE011AD99D4B726C48043B /* Document-rar.icns */,
+				ACF8384CBB477A373189EB2F /* Document-sevenZip.icns */,
+				391F4B1E9306C3083C27D6F5 /* Document-split.icns */,
+				7E3C9E4715B800689E0A867E /* Document-tar.icns */,
+				6A12B993307E9EF9063CCA8F /* Document-tarBzip2.icns */,
+				34113D6586C8971DA64D21FA /* Document-tarGzip.icns */,
+				0FEEF005F6C074064DAED885 /* Document-tarXZ.icns */,
+				E52BE33C72B2FE793C0972C6 /* Document-tarZstd.icns */,
+				7698E78D148B7B4C8C6401CC /* Document-xz.icns */,
+				721D3A760DA2664E354A0234 /* Document-zip.icns */,
+				03D86F5FB39620AD6B35A4B1 /* Document-zipx.icns */,
+				FDA71775236C4A0CE0006B59 /* Document-zstd.icns */,
+			);
+			path = DocumentTypes;
 			sourceTree = "<group>";
 		};
 		F87B4E038680EDC3B73F0AD5 /* FinderExtension */ = {
@@ -165,6 +277,7 @@
 			buildConfigurationList = 1AE4E501FFFBD8BE852ABFCE /* Build configuration list for PBXNativeTarget "LiteZip" */;
 			buildPhases = (
 				B005AA3A3EDDF21082BB1621 /* Sources */,
+				A81AB9DBC93E79DF3C1C9B6A /* Resources */,
 				7889ABC7AD3516BD21BA4220 /* Frameworks */,
 				578878D1062C3CE23D1DFDDD /* Embed Foundation Extensions */,
 				837A51B903BC99E8F8B4BDE8 /* Bundle archive engine */,
@@ -222,6 +335,37 @@
 		};
 /* End PBXProject section */
 
+/* Begin PBXResourcesBuildPhase section */
+		A81AB9DBC93E79DF3C1C9B6A /* Resources */ = {
+			isa = PBXResourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				BF69F78C6451CA55D7FBD997 /* AppIcon.icon in Resources */,
+				4EE35DF63ED30D80F1B0C501 /* Document-bzip2.icns in Resources */,
+				29BA4D893D461514D0CFB55E /* Document-dmg.icns in Resources */,
+				3F8668B2025968244C5389AD /* Document-gzip.icns in Resources */,
+				C6AD668A48732AEC1460FDD7 /* Document-rar.icns in Resources */,
+				B697998EC6E4F0736D8A8A39 /* Document-sevenZip.icns in Resources */,
+				DABAF349763925DD58E88CC1 /* Document-split.icns in Resources */,
+				9EB19BA6745F6FDA03A216E1 /* Document-tar.icns in Resources */,
+				3F8EC5972F2E9ED8B46E830E /* Document-tarBzip2.icns in Resources */,
+				48FA421EF1A06447688CA6EC /* Document-tarGzip.icns in Resources */,
+				A9D277C1A5ACEBD79B4FDF98 /* Document-tarXZ.icns in Resources */,
+				B69AC2FBEAB630014577F44F /* Document-tarZstd.icns in Resources */,
+				DC6FECF19B45DE5F1D59C428 /* Document-xz.icns in Resources */,
+				3FE72AF19D8E84C0089A9374 /* Document-zip.icns in Resources */,
+				E15A19FDDF2DA56B85C721F1 /* Document-zipx.icns in Resources */,
+				DA003FAD93C398245E463E10 /* Document-zstd.icns in Resources */,
+				3EFF6D987CF12EB266A72EF5 /* Licenses in Resources */,
+				C6F3FA1E72E83294DA311B32 /* README.md in Resources */,
+				5236E52A276A0AFC451442DB /* SourcePackages in Resources */,
+				7B3B7C978EAF0983C8029118 /* ThirdPartyNotices.txt in Resources */,
+				8B0459842E77E1AD180D53B2 /* build-format-engines.sh in Resources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXResourcesBuildPhase section */
+
 /* Begin PBXShellScriptBuildPhase section */
 		837A51B903BC99E8F8B4BDE8 /* Bundle archive engine */ = {
 			isa = PBXShellScriptBuildPhase;
@@ -240,7 +384,7 @@
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 			shellPath = /bin/sh;
-			shellScript = "set -eu\nmkdir -p \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine\"\ncp \"$SRCROOT/Vendor/7zip/7zz\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/7zz\"\ncp \"$SRCROOT/Vendor/zstd/zstd\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/zstd\"\nchmod 755 \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/7zz\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/zstd\"\n";
+			shellScript = "set -eu\nmkdir -p \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine\"\ncp \"$SRCROOT/Vendor/7zip/7zz\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/7zz\"\ncp \"$SRCROOT/Vendor/zstd/zstd\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/zstd\"\ncp \"$SRCROOT/Vendor/Formats/bin/\"* \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/\"\nchmod 755 \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/\"*\nchmod 755 \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/7zz\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/zstd\"\n";
 		};
 /* End PBXShellScriptBuildPhase section */
 
@@ -259,9 +403,12 @@
 			files = (
 				8A80261459B5F4F28BB00DEC /* AppModel.swift in Sources */,
 				BB74C5A17881CB1CF6D00A81 /* ArchiveBrowserView.swift in Sources */,
+				D4E48224268E74CC2FE8F9A3 /* ArchiveFormatIcons.swift in Sources */,
 				FC644EAD99535E74158FDBC1 /* LiteZipApp.swift in Sources */,
 				743F75D4B82075656CB8B5B5 /* MainView.swift in Sources */,
+				53A9A88ACF7734EFEF423EAB /* MenuBarController.swift in Sources */,
 				D205AF9048D386CE9E33BD05 /* SettingsView.swift in Sources */,
+				B613E03DEE476F65F65DC909 /* StatusItemDropTarget.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};
@@ -329,7 +476,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -343,7 +490,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.4.0;
+				MARKETING_VERSION = 0.5.0;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -447,7 +594,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 4;
+				CURRENT_PROJECT_VERSION = 5;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -467,7 +614,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.4.0;
+				MARKETING_VERSION = 0.5.0;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

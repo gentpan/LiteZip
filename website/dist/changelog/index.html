@@ -1,0 +1,50 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8"><meta name="viewport" content="width=device-width, initial-scale=1"><meta name="theme-color" content="#0064e0">
+  <title>更新日志 — LiteZip</title>
+  <link rel="canonical" href="https://litezip.app/changelog/">
+  <meta property="og:url" content="https://litezip.app/changelog/">
+  <meta name="description" content="查看 LiteZip 的版本更新记录、新功能、体验改进和问题修复，以及 GitHub 发布说明。">
+  <meta property="og:title" content="更新日志 — LiteZip"><meta property="og:description" content="查看 LiteZip 的版本更新记录、新功能、体验改进和问题修复，以及 GitHub 发布说明。"><meta property="og:type" content="website">
+  <link rel="icon" type="image/png" sizes="32x32" href="/assets/logo-32.png"><link rel="icon" type="image/png" sizes="64x64" href="/assets/logo-64.png"><link rel="apple-touch-icon" sizes="180x180" href="/assets/logo-180.png">
+  <link rel="stylesheet" href="/styles.css"><script src="/site.js" defer></script>
+  <script defer src="https://tongji.giantaccel.com/script.js" data-website-id="915f2f7f-841b-4605-a82c-20114fa4912c"></script>
+</head>
+<body>
+  <a class="skip-link" href="#main">跳到正文</a>
+<header class="header"><a class="brand" href="/" aria-label="LiteZip 首页"><img src="/assets/logo-256.png" width="48" height="48" alt=""><span>LiteZip</span></a><nav aria-label="主导航"><a href="/#features">功能</a><a href="/#formats">支持格式</a><a href="/#faq">常见问题</a><a href="/feedback/">用户反馈</a><a href="/changelog/" aria-current="page">更新日志</a></nav><a class="nav-download" href="/#download">下载 Mac 版</a></header>
+  <main id="main">
+<section class="page-intro wrap" aria-labelledby="page-title">
+      <p class="eyebrow">每一次改进，都留个记录。</p>
+      <h1 id="page-title">小步向前，<br><span>越来越顺手。</span></h1>
+      <p class="page-description">LiteZip 的新功能、体验改进与问题修复。<br>从最初的版本开始，每一步都在这里。</p>
+      <a class="text-link" href="https://github.com/gentpan/LiteZip/releases" target="_blank" rel="noopener">查看全部 GitHub Releases ↗</a>
+    </section>
+    <div class="changelog-layout wrap">
+      <aside class="release-sidebar"><nav aria-label="版本导航"><p class="feature-number">版本记录</p><a href="#v0-5-0"><span>0.5.0</span><span>开发预览</span></a><a href="#v0-4-0"><span>0.4.0</span><span>开发预览</span></a><a href="#v0-3-0"><span>0.3.0</span><span>开发预览</span></a><a href="#v0-2-0"><span>0.2.0</span><span>开发预览</span></a><a href="#v0-1-0"><span>0.1.0</span><span>开发预览</span></a></nav><p>发现问题，或有新的想法？<br><a class="text-link" href="/feedback/">告诉我们 →</a></p></aside>
+      <section class="release-list" aria-label="更新日志"><article class="release" id="v0-5-0" aria-labelledby="v0-5-0-title">
+          <div class="release-heading"><div><p class="release-channel">开发预览</p><h2 id="v0-5-0-title">0.5.0 <span class="release-badge">最新记录</span></h2></div><a class="text-link" href="https://github.com/gentpan/LiteZip/releases/tag/v0.5.0" target="_blank" rel="noopener">GitHub 发布说明 ↗</a></div>
+          <ul><li>全新蓝色角色 App 图标与 Finder 文件图标；压缩格式以不同颜色的文字徽章展示。</li><li>紧凑工具栏保留原生 Liquid Glass，调整控件尺寸与选中状态。</li><li>新增菜单栏快捷压缩，支持拖入文件或文件夹、切换格式、选择保存位置及查看任务进度。</li><li>新增 ISO、AAR、WIM 制作、预览、校验与解压；ISO 支持 Finder 挂载，AAR 使用 macOS 原生 Apple Archive。</li><li>新增 LZIP、LZ4、Brotli、LRZIP、Snappy 单文件压缩与解压，引擎随 App 提供。</li><li>增加 GZIP、BZIP2 等扩展名别名，完善归档路径、输出大小与损坏数据检查。</li></ul>
+<p class="release-note">Developer ID 签名与 Apple 公证已完成，App 已附上公证凭据，Gatekeeper 验证通过。macOS 13+，Apple Silicon／Intel 通用构建。RAR 创建仍需单独连接官方引擎。</p>
+        </article><article class="release" id="v0-4-0" aria-labelledby="v0-4-0-title">
+          <div class="release-heading"><div><p class="release-channel">开发预览</p><h2 id="v0-4-0-title">0.4.0 </h2></div><a class="text-link" href="https://github.com/gentpan/LiteZip/releases/tag/v0.4.0" target="_blank" rel="noopener">GitHub 发布说明 ↗</a></div>
+          <ul><li>新增 TAR.BZ2、TAR.XZ、TAR.ZST 制作、预览、校验与解压，识别 TGZ、TBZ/TBZ2、TXZ、TZST 别名。</li><li>DMG 压缩或存储映像制作、AES-256 中文密码、只读内容预览、校验与 Finder 挂载；源快照保留权限、扩展属性及符号链接。</li><li>DMG 预览结束／失败时卸载私有挂载点；清理前检查挂载状态，避免删除仍挂载的文件系统。</li><li>ZIPX 解压、预览与校验，实际验证 LZMA、BZIP2；不支持的方法明确报错。</li><li>兼容旧式 ZIP .z01 + .zip、RAR .rar + .r00 分卷，后续卷归一、去重、缺卷与链接检查。</li><li>Finder 菜单、文件关联和压缩格式设置同步更新。</li></ul>
+<p class="release-note">Developer ID 签名和 Apple 公证已完成，App 已附上公证凭据，Gatekeeper 验证通过。签名脚本自动完成公证后再生成最终下载包；公证失败不会覆盖已有发布。macOS 13+，arm64／x86_64 通用构建。0.3.0 及更早的历史下载包未补做公证。</p>
+        </article><article class="release" id="v0-3-0" aria-labelledby="v0-3-0-title">
+          <div class="release-heading"><div><p class="release-channel">开发预览</p><h2 id="v0-3-0-title">0.3.0 </h2></div><a class="text-link" href="https://github.com/gentpan/LiteZip/releases/tag/v0.3.0" target="_blank" rel="noopener">GitHub 发布说明 ↗</a></div>
+          <ul><li>可选连接本机官方 RAR 7+ 引擎，支持创建 RAR、六档压缩等级、AES-256 与文件名加密、中文密码。</li><li>RAR 分卷创建与整组原子发布，<code>.partN.rar</code> 首卷归一、去重、预览、校验、安全解压和缺卷检查。</li><li>主窗口和设置新增引擎连接入口、官方下载与许可说明；不打包分发官方引擎或注册密钥。</li><li>RAR 使用私有快照处理字面文件名，避免星号扩大选择范围；复制与压缩可取消，源数据保留。</li><li>修正 macOS 文件枚举隐藏 AppleDouble 文件的问题，关闭 Mac 资源排除时可完整归档这些文件。</li></ul>
+<p class="release-note">Developer ID 签名，尚未完成 Apple 公证。官方 RAR 引擎单独安装、单独许可。</p>
+        </article><article class="release" id="v0-2-0" aria-labelledby="v0-2-0-title">
+          <div class="release-heading"><div><p class="release-channel">开发预览</p><h2 id="v0-2-0-title">0.2.0 </h2></div><a class="text-link" href="https://github.com/gentpan/LiteZip/releases/tag/v0.2.0" target="_blank" rel="noopener">GitHub 发布说明 ↗</a></div>
+          <ul><li>常驻紧凑设置面板，格式移到标题栏，压缩等级改为刻度滑块。</li><li>密码确认、显示／隐藏、即时校验；ZIP／7Z 增加存储等级。</li><li>ZIP／7Z 分卷创建、预览、校验和安全解压；首卷归一、整组去重、缺卷提示。</li><li>排除 Mac 资源文件、分别压缩每个项目、可选完整性校验。</li><li>压缩 TAR 内容预览与目录检查深入内层。</li><li>单文件流命名保留源文件扩展名；带点的文件夹完整命名。</li><li>修复从内容预览转到解压保存面板的生命周期。</li></ul>
+<p class="release-note">Developer ID 签名，尚未完成 Apple 公证。macOS 13+，arm64／x86_64 通用构建。</p>
+        </article><article class="release" id="v0-1-0" aria-labelledby="v0-1-0-title">
+          <div class="release-heading"><div><p class="release-channel">开发预览</p><h2 id="v0-1-0-title">0.1.0 </h2></div><a class="text-link" href="https://github.com/gentpan/LiteZip/releases/tag/v0.1.0" target="_blank" rel="noopener">GitHub 发布说明 ↗</a></div>
+          <p class="release-note">原生压缩与解压基础版，包含内置引擎、加密、任务队列、流式安全解压、内容浏览和 Finder 扩展。</p>
+        </article></section>
+    </div>
+  </main>
+<footer class="footer wrap"><a class="brand" href="/"><img src="/assets/logo-256.png" width="40" height="40" alt=""><span>LiteZip</span></a><p>文件，轻装出发。</p><div><a href="/feedback/">用户反馈</a><a href="/changelog/">更新日志</a><a href="https://github.com/gentpan/LiteZip" target="_blank" rel="noopener">GitHub</a><a href="https://github.com/gentpan/LiteZip/blob/main/LICENSE" target="_blank" rel="noopener">MIT 许可</a></div></footer>
+</body>
+</html>

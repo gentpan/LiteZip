@@ -1,0 +1,4 @@
+# dist contains this buildless website's source and assets.
+!dist/
+!dist/**
+__pycache__/

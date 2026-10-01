@@ -1,0 +1,131 @@
+[
+  {
+    "key": "zip",
+    "label": "ZIP",
+    "ext": [
+      "zip"
+    ],
+    "uti": "public.zip-archive"
+  },
+  {
+    "key": "sevenZip",
+    "label": "7Z",
+    "ext": [
+      "7z"
+    ],
+    "uti": "org.7-zip.7-zip-archive"
+  },
+  {
+    "key": "rar",
+    "label": "RAR",
+    "ext": [
+      "rar"
+    ],
+    "uti": "com.rarlab.rar-archive"
+  },
+  {
+    "key": "tar",
+    "label": "TAR",
+    "ext": [
+      "tar"
+    ],
+    "uti": "public.tar-archive"
+  },
+  {
+    "key": "tarGzip",
+    "label": "TAR.GZ",
+    "ext": [
+      "tgz",
+      "tar.gz"
+    ],
+    "uti": "app.litezip.tar-gzip"
+  },
+  {
+    "key": "tarBzip2",
+    "label": "TAR.BZ2",
+    "ext": [
+      "tbz",
+      "tbz2",
+      "tar.bz2"
+    ],
+    "uti": "app.litezip.tar-bzip2"
+  },
+  {
+    "key": "tarXZ",
+    "label": "TAR.XZ",
+    "ext": [
+      "txz",
+      "tar.xz"
+    ],
+    "uti": "app.litezip.tar-xz"
+  },
+  {
+    "key": "tarZstd",
+    "label": "TAR.ZST",
+    "ext": [
+      "tzst",
+      "tar.zst",
+      "tar.zstd"
+    ],
+    "uti": "app.litezip.tar-zstd"
+  },
+  {
+    "key": "gzip",
+    "label": "GZIP",
+    "ext": [
+      "gz"
+    ],
+    "uti": "org.gnu.gnu-zip-archive"
+  },
+  {
+    "key": "bzip2",
+    "label": "BZIP2",
+    "ext": [
+      "bz2"
+    ],
+    "uti": "public.bzip2-archive"
+  },
+  {
+    "key": "xz",
+    "label": "XZ",
+    "ext": [
+      "xz"
+    ],
+    "uti": "org.tukaani.xz-archive"
+  },
+  {
+    "key": "zstd",
+    "label": "ZSTD",
+    "ext": [
+      "zst",
+      "zstd"
+    ],
+    "uti": "org.zstandard.zstd-archive"
+  },
+  {
+    "key": "dmg",
+    "label": "DMG",
+    "ext": [
+      "dmg"
+    ],
+    "uti": "com.apple.disk-image-udif"
+  },
+  {
+    "key": "zipx",
+    "label": "ZIPX",
+    "ext": [
+      "zipx"
+    ],
+    "uti": "com.winzip.zipx-archive"
+  },
+  {
+    "key": "split",
+    "label": "001",
+    "ext": [
+      "001",
+      "z01",
+      "r00"
+    ],
+    "uti": "app.litezip.split-archive"
+  }
+]

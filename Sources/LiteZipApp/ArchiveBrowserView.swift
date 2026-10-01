@@ -35,6 +35,9 @@ struct ArchiveBrowserView: View {
             HStack {
                 Text("\(entries.count) 个项目 · \(ByteCountFormatter.string(fromByteCount: entries.reduce(0) { $0 + $1.size }, countStyle: .file))").foregroundStyle(.secondary)
                 Spacer()
+                if ArchiveFormat.detect(url) == .iso {
+                    Button("在 Finder 挂载") { model.openDiskImage(url) }
+                }
                 Button(ArchiveFormat.detect(url) == .dmg ? "在 Finder 打开" : "解压…") {
                     if ArchiveFormat.detect(url) == .dmg { model.openDiskImage(url); dismiss(); return }
                     model.receive([url]); model.mode = .extract; model.password = password

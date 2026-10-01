@@ -27,6 +27,8 @@ final class AppPreferences: ObservableObject {
         }
     }
     @Published var defaultFormat: ArchiveFormat { didSet { UserDefaults.standard.set(defaultFormat.rawValue, forKey: "format") } }
+    @Published var showsMenuBar: Bool { didSet { UserDefaults.standard.set(showsMenuBar, forKey: "showsMenuBar") } }
+    @Published var menuBarAskDestination: Bool { didSet { UserDefaults.standard.set(menuBarAskDestination, forKey: "menuBarAskDestination") } }
     @Published var level: CompressionLevel { didSet { UserDefaults.standard.set(level.rawValue, forKey: "level") } }
     @Published var revealResult: Bool { didSet { UserDefaults.standard.set(revealResult, forKey: "reveal") } }
     @Published var maximumGB: Int { didSet { UserDefaults.standard.set(maximumGB, forKey: "maximumGB") } }
@@ -36,6 +38,8 @@ final class AppPreferences: ObservableObject {
     var rarURL: URL? { RAREngine.locate(configuredPath: rarPath) }
     init() {
         let defaults = UserDefaults.standard
+        showsMenuBar = defaults.object(forKey: "showsMenuBar") as? Bool ?? true
+        menuBarAskDestination = defaults.bool(forKey: "menuBarAskDestination")
         appearance = AppAppearance(rawValue: defaults.string(forKey: "appearance") ?? "跟随系统") ?? .system
         let format = ArchiveFormat(rawValue: defaults.string(forKey: "format") ?? "zip") ?? .zip
         defaultFormat = format.canCreate ? format : .zip
@@ -88,6 +92,7 @@ final class AppModel: ObservableObject {
     @Published var errorMessage: String?
     @Published var browserURL: URL?
     var chooseDestinationAfterBrowser = false
+    var openMainWindow: (() -> Void)?
     private var running = 0
     private var activePanel: NSSavePanel?
     private let logger = Logger(subsystem: "app.litezip.LiteZip", category: "Tasks")
@@ -105,7 +110,7 @@ final class AppModel: ObservableObject {
             return files.contains { ArchiveFormat.detect($0) == nil } ? "解压模式仅支持压缩包，请移除普通文件或切换到压缩。" : nil
         }
         if format == .rar && preferences.rarURL == nil { return ArchiveError.rarEngineMissing.localizedDescription }
-        if [.rar, .dmg].contains(format) && !separateArchives {
+        if [.rar, .dmg, .iso, .aar].contains(format) && !separateArchives {
             let names = files.map { $0.lastPathComponent.precomposedStringWithCanonicalMapping.lowercased() }
             if Set(names).count != names.count { return "\(format.title) 中的顶层项目不能同名。请勾选分别压缩，或先修改其中一个名称。" }
         }
@@ -200,17 +205,17 @@ final class AppModel: ObservableObject {
             if let error { Task { @MainActor in self.errorMessage = error.localizedDescription } }
         }
     }
-    private func present(_ panel: NSSavePanel, preferredWindow: NSWindow? = nil, completion: @escaping (NSApplication.ModalResponse) -> Void) {
+    private func present(_ panel: NSSavePanel, preferredWindow: NSWindow? = nil, standalone: Bool = false, completion: @escaping (NSApplication.ModalResponse) -> Void) {
         guard activePanel == nil else { return }
         activePanel = panel
         let handler: (NSApplication.ModalResponse) -> Void = { [weak self] response in
             completion(response)
-            self?.activePanel = nil
+            if self?.activePanel === panel { self?.activePanel = nil }
         }
         // The closing browser sheet can briefly remain the key window. Attach
         // file panels to the main window after its previous sheet has detached.
         Task { @MainActor in
-            if let window = preferredWindow ?? NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }) {
+            if !standalone, let window = preferredWindow ?? NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }) {
                 for _ in 0..<50 where window.attachedSheet != nil { try? await Task.sleep(for: .milliseconds(100)) }
                 guard window.isVisible, window.attachedSheet == nil else {
                     activePanel = nil; errorMessage = "请先关闭当前对话框，再选择保存位置。"; return
@@ -225,6 +230,58 @@ final class AppModel: ObservableObject {
         panel.message = "选择要压缩的文件，或要解压的压缩包"
         present(panel) { [weak self] response in
             if response == .OK { self?.receive(panel.urls) }
+        }
+    }
+    /// Menu bar input is always compressed and does not replace the main selection.
+    func quickCompress(_ urls: [URL], format: ArchiveFormat, reportError: @escaping (String) -> Void) {
+        guard activePanel == nil else { reportError("请先完成或关闭当前文件对话框。"); return }
+        let inputs = Array(NSOrderedSet(array: urls)) as? [URL] ?? urls
+        guard !inputs.isEmpty, inputs.count <= 1000,
+              inputs.allSatisfy({ $0.isFileURL && FileManager.default.fileExists(atPath: $0.path) }) else {
+            reportError("请拖入本地文件或文件夹，一次最多选择 1000 项。"); return
+        }
+        guard format.canCreate else { reportError("此格式仅支持解压。"); return }
+        if format.singleFileOnly && (inputs.count != 1 || (try? inputs[0].resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) != true) {
+            reportError("\(format.title) 只能压缩单个普通文件。文件夹或多个文件请选择 ZIP、7Z 或 TAR.GZ。"); return
+        }
+        if format == .rar && preferences.rarURL == nil { reportError(ArchiveError.rarEngineMissing.localizedDescription); return }
+        if [.rar, .dmg, .iso, .aar].contains(format) {
+            let names = inputs.map { $0.lastPathComponent.precomposedStringWithCanonicalMapping.lowercased() }
+            guard Set(names).count == names.count else { reportError("\(format.title) 中的顶层项目不能同名，请修改名称后重试。"); return }
+        }
+        let level = preferences.level == .store && !format.supportsStore ? CompressionLevel.normal : preferences.level
+        let options = CompressionOptions(format: format, level: level,
+            excludeMacResources: excludeMacResources, verifyArchive: verifyArchive)
+        let name = inputs.count == 1 ? CompressionPlanning.name(for: inputs[0], format: format) : "Archive." + format.suffix
+        if !preferences.menuBarAskDestination {
+            enqueue(files: inputs, destination: inputs[0].deletingLastPathComponent().appendingPathComponent(name), extracting: false, options: options)
+            return
+        }
+        let panel = NSSavePanel()
+        panel.title = "快捷压缩 · \(format.title)"; panel.prompt = "压缩"
+        panel.canCreateDirectories = true
+        panel.nameFieldStringValue = name
+        panel.directoryURL = inputs[0].deletingLastPathComponent()
+        panel.message = "\(inputs.count) 个项目 · \(level.title)压缩 · 不加密。需要密码或分卷请使用主窗口。"
+        NSApp.activate(ignoringOtherApps: true)
+        present(panel, standalone: true) { [weak self] response in
+            guard let self, response == .OK, let url = panel.url else { return }
+            let destination = url.lastPathComponent.lowercased().hasSuffix("." + format.suffix) ? url : url.appendingPathExtension(format.suffix)
+            self.enqueue(files: inputs, destination: destination, extracting: false, options: options)
+        }
+    }
+    func chooseQuickCompressionFiles(format: ArchiveFormat, reportError: @escaping (String) -> Void) {
+        guard activePanel == nil else { reportError("请先完成或关闭当前文件对话框。"); return }
+        let panel = NSOpenPanel()
+        panel.title = "快捷压缩"; panel.prompt = "下一步"
+        panel.allowsMultipleSelection = true; panel.canChooseFiles = true; panel.canChooseDirectories = true
+        panel.message = "选择要压缩的本地文件或文件夹"
+        NSApp.activate(ignoringOtherApps: true)
+        present(panel, standalone: true) { [weak self] response in
+            guard let self, response == .OK else { return }
+            // Clear the open-panel guard before presenting the following save panel.
+            self.activePanel = nil
+            self.quickCompress(panel.urls, format: format, reportError: reportError)
         }
     }
     func chooseDestination() {

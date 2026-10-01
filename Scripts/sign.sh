@@ -18,8 +18,9 @@ fi
 # Fail before altering signatures if the saved account cannot authenticate.
 xcrun notarytool history --keychain-profile "$notary_profile" --output-format json >/dev/null
 
-codesign --force --options runtime --timestamp --sign "$LITEZIP_SIGN_IDENTITY" "$app/Contents/Resources/Engine/7zz"
-codesign --force --options runtime --timestamp --sign "$LITEZIP_SIGN_IDENTITY" "$app/Contents/Resources/Engine/zstd"
+for engine in "$app/Contents/Resources/Engine/"*; do
+  codesign --force --options runtime --timestamp --sign "$LITEZIP_SIGN_IDENTITY" "$engine"
+done
 codesign --force --options runtime --timestamp --entitlements FinderExtension/Finder.entitlements --sign "$LITEZIP_SIGN_IDENTITY" "$app/Contents/PlugIns/LiteZipFinder.appex"
 codesign --force --options runtime --timestamp --sign "$LITEZIP_SIGN_IDENTITY" "$app"
 verify_developer_id "$app"

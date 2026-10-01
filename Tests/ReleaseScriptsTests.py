@@ -50,7 +50,7 @@ class ReleaseScriptsTests(unittest.TestCase):
     def setUp(self):
         self.temp = tempfile.TemporaryDirectory(prefix='LiteZip release tests ')
         self.addCleanup(self.temp.cleanup)
-        self.base = Path(self.temp.name)
+        self.base = Path(self.temp.name).resolve()
         self.app = self.base / 'Input With Spaces.app'
         contents = self.app / 'Contents'
         contents.mkdir(parents=True)
@@ -58,6 +58,12 @@ class ReleaseScriptsTests(unittest.TestCase):
             'CFBundleShortVersionString': '9.8.7',
             'CFBundleIdentifier': 'test.release',
         }))
+        # Include every bundled executable so adding engines cannot silently skip signing.
+        self.engines = ('7zz', 'zstd', 'lzip', 'lz4', 'brotli', 'lrzip', 'snzip')
+        engine_dir = contents / 'Resources' / 'Engine'
+        engine_dir.mkdir(parents=True)
+        for name in self.engines:
+            (engine_dir / name).write_bytes(b'test executable')
         self.dist = self.base / 'output with spaces'
         self.dist.mkdir()
         self.archive = self.dist / 'LiteZip-9.8.7-macOS-universal.zip'
@@ -117,8 +123,9 @@ class ReleaseScriptsTests(unittest.TestCase):
         self.assertTrue(any(c[:3] == ['xcrun', 'stapler', 'validate'] for c in calls))
         self.assertTrue(any(c[0] == 'spctl' for c in calls))
         signed = [c[-1] for c in calls if c[:2] == ['codesign', '--force']]
-        self.assertEqual(len(signed), 4)
-        self.assertTrue(all(str(self.app) in path for path in signed))
+        self.assertCountEqual(signed, [str(self.app / 'Contents' / 'Resources' / 'Engine' / name)
+                                     for name in self.engines] +
+                              [str(self.app / 'Contents' / 'PlugIns' / 'LiteZipFinder.appex'), str(self.app)])
         with zipfile.ZipFile(self.archive) as archive:
             info = plistlib.loads(archive.read('LiteZip.app/Contents/Info.plist'))
             self.assertEqual(info['CFBundleShortVersionString'], '9.8.7')

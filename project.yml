@@ -7,8 +7,8 @@ settings:
   base:
     SWIFT_VERSION: '6.0'
     MACOSX_DEPLOYMENT_TARGET: '13.0'
-    MARKETING_VERSION: '0.4.0'
-    CURRENT_PROJECT_VERSION: '4'
+    MARKETING_VERSION: '0.5.0'
+    CURRENT_PROJECT_VERSION: '5'
     CODE_SIGN_STYLE: Manual
     ENABLE_HARDENED_RUNTIME: YES
     ARCHS: 'arm64 x86_64'
@@ -21,16 +21,31 @@ targets:
     platform: macOS
     sources:
       - Sources/LiteZipApp
-    resources:
-      - path: Resources/AppIcon.icns
+      - path: Resources/AppIcon.icon
+        type: file
+        buildPhase: resources
+      - path: Resources/DocumentTypes
+        buildPhase: resources
       - path: Resources/ThirdPartyNotices.txt
+        buildPhase: resources
+      - path: Vendor/Formats/Licenses
+        type: folder
+        buildPhase: resources
+      - path: Vendor/Formats/SourcePackages
+        type: folder
+        buildPhase: resources
+      - path: Vendor/Formats/README.md
+        buildPhase: resources
+      - path: Scripts/build-format-engines.sh
+        buildPhase: resources
     info:
       path: Resources/Info.plist
       properties:
         CFBundleDisplayName: LiteZip
-        CFBundleShortVersionString: '0.4.0'
-        CFBundleVersion: '4'
+        CFBundleShortVersionString: '0.5.0'
+        CFBundleVersion: '5'
         CFBundleIconFile: AppIcon
+        CFBundleIconName: AppIcon
         LSMinimumSystemVersion: '13.0'
         NSHighResolutionCapable: true
         NSHumanReadableCopyright: 'Copyright © 2026 LiteZip contributors'
@@ -38,32 +53,226 @@ targets:
           - CFBundleURLName: app.litezip.commands
             CFBundleURLSchemes: [litezip]
         CFBundleDocumentTypes:
-          - CFBundleTypeName: Archives
+          - CFBundleTypeName: LiteZip ZIP Archive
             CFBundleTypeRole: Viewer
             LSHandlerRank: Alternate
-            CFBundleTypeExtensions: [zip, zipx, 7z, rar, tar, gz, tgz, bz2, xz, zst, zstd, tbz, tbz2, txz, tzst, dmg, '001', z01, r00]
-            LSItemContentTypes: [public.zip-archive, org.7-zip.7-zip-archive, com.rarlab.rar-archive, public.tar-archive, org.gnu.gnu-zip-archive, public.bzip2-archive, org.tukaani.xz-archive, org.zstandard.zstd-archive, app.litezip.split-archive, com.apple.disk-image-udif, com.winzip.zipx-archive, app.litezip.legacy-volume, app.litezip.compressed-tar]
+            CFBundleTypeIconFile: Document-zip.icns
+            CFBundleTypeExtensions: ['zip']
+            LSItemContentTypes: ['public.zip-archive']
+          - CFBundleTypeName: LiteZip 7Z Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-sevenZip.icns
+            CFBundleTypeExtensions: ['7z']
+            LSItemContentTypes: ['org.7-zip.7-zip-archive']
+          - CFBundleTypeName: LiteZip RAR Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-rar.icns
+            CFBundleTypeExtensions: ['rar']
+            LSItemContentTypes: ['com.rarlab.rar-archive']
+          - CFBundleTypeName: LiteZip TAR Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-tar.icns
+            CFBundleTypeExtensions: ['tar']
+            LSItemContentTypes: ['public.tar-archive']
+          - CFBundleTypeName: LiteZip TAR.GZ Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-tarGzip.icns
+            CFBundleTypeExtensions: ['tgz', 'tar.gz']
+            LSItemContentTypes: ['app.litezip.tar-gzip']
+          - CFBundleTypeName: LiteZip TAR.BZ2 Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-tarBzip2.icns
+            CFBundleTypeExtensions: ['tbz', 'tbz2', 'tar.bz2']
+            LSItemContentTypes: ['app.litezip.tar-bzip2']
+          - CFBundleTypeName: LiteZip TAR.XZ Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-tarXZ.icns
+            CFBundleTypeExtensions: ['txz', 'tar.xz']
+            LSItemContentTypes: ['app.litezip.tar-xz']
+          - CFBundleTypeName: LiteZip TAR.ZST Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-tarZstd.icns
+            CFBundleTypeExtensions: ['tzst', 'tar.zst', 'tar.zstd']
+            LSItemContentTypes: ['app.litezip.tar-zstd']
+          - CFBundleTypeName: LiteZip GZIP Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-gzip.icns
+            CFBundleTypeExtensions: ['gz']
+            LSItemContentTypes: ['org.gnu.gnu-zip-archive']
+          - CFBundleTypeName: LiteZip BZIP2 Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-bzip2.icns
+            CFBundleTypeExtensions: ['bz2']
+            LSItemContentTypes: ['public.bzip2-archive']
+          - CFBundleTypeName: LiteZip XZ Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-xz.icns
+            CFBundleTypeExtensions: ['xz']
+            LSItemContentTypes: ['org.tukaani.xz-archive']
+          - CFBundleTypeName: LiteZip ZSTD Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-zstd.icns
+            CFBundleTypeExtensions: ['zst', 'zstd']
+            LSItemContentTypes: ['org.zstandard.zstd-archive']
+          - CFBundleTypeName: LiteZip ISO Image
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: AppIcon.icns
+            CFBundleTypeExtensions: ['iso']
+            LSItemContentTypes: ['public.iso-image']
+          - CFBundleTypeName: LiteZip Apple Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: AppIcon.icns
+            CFBundleTypeExtensions: ['aar']
+            LSItemContentTypes: ['com.apple.archive']
+          - CFBundleTypeName: LiteZip WIM Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: AppIcon.icns
+            CFBundleTypeExtensions: ['wim']
+            LSItemContentTypes: ['com.microsoft.wim']
+          - CFBundleTypeName: LiteZip LZIP Stream
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: AppIcon.icns
+            CFBundleTypeExtensions: ['lz', 'lzip']
+            LSItemContentTypes: ['org.nongnu.lzip-archive']
+          - CFBundleTypeName: LiteZip LZ4 Stream
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: AppIcon.icns
+            CFBundleTypeExtensions: ['lz4']
+            LSItemContentTypes: ['org.lz4.lz4-archive']
+          - CFBundleTypeName: LiteZip Brotli Stream
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: AppIcon.icns
+            CFBundleTypeExtensions: ['br', 'brotli']
+            LSItemContentTypes: ['org.brotli.br-archive']
+          - CFBundleTypeName: LiteZip LRZIP Stream
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: AppIcon.icns
+            CFBundleTypeExtensions: ['lrz', 'lrzip']
+            LSItemContentTypes: ['org.lrzip.lrz-archive']
+          - CFBundleTypeName: LiteZip Snappy Stream
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: AppIcon.icns
+            CFBundleTypeExtensions: ['sz', 'snappy']
+            LSItemContentTypes: ['org.snappy.sz-archive']
+          - CFBundleTypeName: LiteZip DMG Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-dmg.icns
+            CFBundleTypeExtensions: ['dmg']
+            LSItemContentTypes: ['com.apple.disk-image-udif']
+          - CFBundleTypeName: LiteZip ZIPX Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-zipx.icns
+            CFBundleTypeExtensions: ['zipx']
+            LSItemContentTypes: ['com.winzip.zipx-archive']
+          - CFBundleTypeName: LiteZip 001 Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: Document-split.icns
+            CFBundleTypeExtensions: ['001', 'z01', 'r00']
+            LSItemContentTypes: ['app.litezip.split-archive', 'app.litezip.legacy-volume']
           - CFBundleTypeName: Files to Compress
             CFBundleTypeRole: Viewer
             LSHandlerRank: None
             LSItemContentTypes: [public.data, public.folder]
         UTExportedTypeDeclarations:
           - UTTypeIdentifier: app.litezip.split-archive
+            UTTypeIconFile: Document-split.icns
             UTTypeDescription: Split Archive First Volume
             UTTypeConformsTo: [public.archive]
             UTTypeTagSpecification:
               public.filename-extension: ['001']
           - UTTypeIdentifier: app.litezip.legacy-volume
+            UTTypeIconFile: Document-split.icns
             UTTypeDescription: Legacy Archive Volume
             UTTypeConformsTo: [public.archive]
             UTTypeTagSpecification:
               public.filename-extension: [z01, r00]
-          - UTTypeIdentifier: app.litezip.compressed-tar
-            UTTypeDescription: Compressed TAR Archive
+          - UTTypeIdentifier: app.litezip.tar-gzip
+            UTTypeDescription: TAR.GZ Archive
+            UTTypeConformsTo: [public.archive]
+            UTTypeIconFile: Document-tarGzip.icns
+            UTTypeTagSpecification:
+              public.filename-extension: ['tgz', 'tar.gz']
+          - UTTypeIdentifier: app.litezip.tar-bzip2
+            UTTypeDescription: TAR.BZ2 Archive
+            UTTypeConformsTo: [public.archive]
+            UTTypeIconFile: Document-tarBzip2.icns
+            UTTypeTagSpecification:
+              public.filename-extension: ['tbz', 'tbz2', 'tar.bz2']
+          - UTTypeIdentifier: app.litezip.tar-xz
+            UTTypeDescription: TAR.XZ Archive
+            UTTypeConformsTo: [public.archive]
+            UTTypeIconFile: Document-tarXZ.icns
+            UTTypeTagSpecification:
+              public.filename-extension: ['txz', 'tar.xz']
+          - UTTypeIdentifier: app.litezip.tar-zstd
+            UTTypeDescription: TAR.ZST Archive
+            UTTypeConformsTo: [public.archive]
+            UTTypeIconFile: Document-tarZstd.icns
+            UTTypeTagSpecification:
+              public.filename-extension: ['tzst', 'tar.zst', 'tar.zstd']
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: public.iso-image
+            UTTypeDescription: ISO Disc Image
+            UTTypeConformsTo: [public.disk-image]
+            UTTypeTagSpecification:
+              public.filename-extension: [iso]
+          - UTTypeIdentifier: com.apple.archive
+            UTTypeDescription: Apple Archive
             UTTypeConformsTo: [public.archive]
             UTTypeTagSpecification:
-              public.filename-extension: [tgz, tbz, tbz2, txz, tzst]
-        UTImportedTypeDeclarations:
+              public.filename-extension: [aar]
+          - UTTypeIdentifier: com.microsoft.wim
+            UTTypeDescription: Windows Imaging Archive
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [wim]
+          - UTTypeIdentifier: org.nongnu.lzip-archive
+            UTTypeDescription: Lzip Stream
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [lz, lzip]
+          - UTTypeIdentifier: org.lz4.lz4-archive
+            UTTypeDescription: LZ4 Stream
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [lz4]
+          - UTTypeIdentifier: org.brotli.br-archive
+            UTTypeDescription: Brotli Stream
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [br, brotli]
+          - UTTypeIdentifier: org.lrzip.lrz-archive
+            UTTypeDescription: LRZIP Stream
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [lrz, lrzip]
+          - UTTypeIdentifier: org.snappy.sz-archive
+            UTTypeDescription: Snappy Framed Stream
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [sz, snappy]
           - UTTypeIdentifier: com.apple.disk-image-udif
             UTTypeDescription: Disk Image
             UTTypeConformsTo: [public.disk-image]
@@ -88,7 +297,7 @@ targets:
             UTTypeDescription: XZ Archive
             UTTypeConformsTo: [public.archive]
             UTTypeTagSpecification:
-              public.filename-extension: [xz, txz]
+              public.filename-extension: [xz]
           - UTTypeIdentifier: org.zstandard.zstd-archive
             UTTypeDescription: Zstandard Archive
             UTTypeConformsTo: [public.archive]
@@ -97,6 +306,7 @@ targets:
     settings:
       base:
         PRODUCT_BUNDLE_IDENTIFIER: app.litezip.LiteZip
+        ASSETCATALOG_COMPILER_APPICON_NAME: AppIcon
         ENABLE_APP_SANDBOX: NO
         CODE_SIGN_IDENTITY: '-'
     dependencies:
@@ -111,6 +321,8 @@ targets:
           mkdir -p "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine"
           cp "$SRCROOT/Vendor/7zip/7zz" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/7zz"
           cp "$SRCROOT/Vendor/zstd/zstd" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/zstd"
+          cp "$SRCROOT/Vendor/Formats/bin/"* "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/"
+          chmod 755 "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/"*
           chmod 755 "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/7zz" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/zstd"
         basedOnDependencyAnalysis: false
   LiteZipFinder:
@@ -123,8 +335,8 @@ targets:
       path: FinderExtension/Info.plist
       properties:
         CFBundleDisplayName: LiteZip Finder
-        CFBundleShortVersionString: '0.4.0'
-        CFBundleVersion: '4'
+        CFBundleShortVersionString: '0.5.0'
+        CFBundleVersion: '5'
         NSExtension:
           NSExtensionAttributes: {}
           NSExtensionPointIdentifier: com.apple.FinderSync

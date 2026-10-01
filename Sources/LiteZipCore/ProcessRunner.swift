@@ -40,7 +40,7 @@ private final class ErrorBuffer: @unchecked Sendable {
 
 struct ProcessRunner: Sendable {
     let executable: URL
-    func run(_ arguments: [String], directory: URL? = nil, password: String? = nil, standardInput: Data? = nil,
+    func run(_ arguments: [String], directory: URL? = nil, password: String? = nil, standardInput: Data? = nil, environment: [String: String] = [:],
              control: OperationControl, limit: Int = 32 * 1_024 * 1_024,
              output: ((Data) throws -> Void)? = nil) throws -> Data {
         try control.check()
@@ -50,7 +50,7 @@ struct ProcessRunner: Sendable {
         let process = Process()
         process.executableURL = executable; process.arguments = arguments
         process.currentDirectoryURL = directory
-        process.environment = ["LANG": "en_US.UTF-8", "LC_ALL": "en_US.UTF-8", "PATH": "/usr/bin:/bin"]
+        process.environment = ["LANG": "en_US.UTF-8", "LC_ALL": "en_US.UTF-8", "PATH": "/usr/bin:/bin"].merging(environment) { _, value in value }
         let stdout = Pipe(), stderr = Pipe(), stdin = Pipe()
         process.standardOutput = stdout; process.standardError = stderr; process.standardInput = stdin
         let errorBuffer = ErrorBuffer(), done = DispatchGroup()

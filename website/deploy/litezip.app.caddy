@@ -1,0 +1,26 @@
+litezip.app {
+    root * /var/www/litezip.app/current
+    encode zstd gzip
+    tls {
+        issuer acme {
+            # Cloudflare terminates TLS, so use HTTP domain validation.
+            disable_tlsalpn_challenge
+        }
+    }
+    header {
+        X-Content-Type-Options "nosniff"
+        X-Frame-Options "DENY"
+        Referrer-Policy "strict-origin-when-cross-origin"
+        Cache-Control "no-cache"
+    }
+    file_server
+}
+
+www.litezip.app {
+    tls {
+        issuer acme {
+            disable_tlsalpn_challenge
+        }
+    }
+    redir https://litezip.app{uri} permanent
+}

@@ -24,7 +24,7 @@ final class FinderSync: FIFinderSync {
     private func isArchive(_ url: URL) -> Bool {
         if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { return false }
         let ext = url.pathExtension.lowercased()
-        if ["zip", "zipx", "7z", "rar", "tar", "gz", "tgz", "bz2", "xz", "zst", "zstd", "tbz", "tbz2", "txz", "tzst", "dmg"].contains(ext) { return true }
+        if ["zip", "zipx", "7z", "rar", "tar", "gz", "gzip", "tgz", "bz2", "bzip2", "xz", "zst", "zstd", "tbz", "tbz2", "txz", "tzst", "lz", "lzip", "lz4", "br", "brotli", "lrz", "lrzip", "aar", "sz", "snappy", "wim", "dmg", "iso"].contains(ext) { return true }
         if ext.count >= 3, let letter = ext.first, let ascii = letter.asciiValue,
            (114...122).contains(ascii), ext.dropFirst().allSatisfy({ $0.isASCII && $0.isNumber }),
            let index = Int(ext.dropFirst()), (letter == "z" ? index > 0 : ext.count == 3) { return true }
