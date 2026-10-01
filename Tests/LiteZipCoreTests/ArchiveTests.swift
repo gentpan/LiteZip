@@ -169,6 +169,18 @@ struct ArchiveTests {
         #expect(try out.appendingPathComponent("large.bin").resourceValues(forKeys: [.fileSizeKey]).fileSize == 1_024 * 1_024 * 1_024)
         try await f.service.test(archive: archive); try f.assertClean()
     }
+    @Test("Engine progress arrives before exit")
+    func progressDelivery() throws {
+        let f = try Fixture(); defer { f.close() }
+        let script = try f.makeFile("progress.sh", contents: Data("#!/bin/sh\nprintf '50%%\\n'\n/bin/sleep 1\nprintf '100%%\\n'\n".utf8))
+        try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
+        var firstChunk: Date?
+        _ = try ProcessRunner(executable: script).run([], control: .init()) { _ in
+            if firstChunk == nil { firstChunk = Date() }
+        }
+        #expect(firstChunk != nil)
+        #expect(Date().timeIntervalSince(firstChunk!) > 0.8)
+    }
     @Test("Cross-format path checks")
     func policy() throws {
         for path in ["../../escape", "/etc/passwd", "C:/Windows/file", "a\\..\\b", "a//b", "a/./b", "x\u{0}y"] {

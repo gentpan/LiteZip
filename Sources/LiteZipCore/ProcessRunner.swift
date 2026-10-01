@@ -58,7 +58,8 @@ struct ProcessRunner: Sendable {
         defer { control.clear(process); try? stdout.fileHandleForReading.close(); try? stderr.fileHandleForReading.close() }
         Thread.detachNewThread {
             defer { done.leave() }
-            while let chunk = try? stderr.fileHandleForReading.read(upToCount: 65_536), !chunk.isEmpty {
+            var buffer = [UInt8](repeating: 0, count: 65_536)
+            while let chunk = try? Self.nextChunk(from: stderr.fileHandleForReading, buffer: &buffer) {
                 if errorBuffer.data.count < 65_536 { errorBuffer.data.append(chunk.prefix(65_536 - errorBuffer.data.count)) }
             }
         }
@@ -74,7 +75,8 @@ struct ProcessRunner: Sendable {
             }
             try stdin.fileHandleForWriting.close()
             var captured = Data()
-            while let chunk = try stdout.fileHandleForReading.read(upToCount: 65_536), !chunk.isEmpty {
+            var buffer = [UInt8](repeating: 0, count: 65_536)
+            while let chunk = try Self.nextChunk(from: stdout.fileHandleForReading, buffer: &buffer) {
                 try control.check()
                 if let output { try output(chunk) }
                 else {
@@ -95,6 +97,17 @@ struct ProcessRunner: Sendable {
             process.waitUntilExit(); done.wait()
             try control.check()
             throw error
+        }
+    }
+    // Foundation's read(upToCount:) may wait to fill a pipe buffer. POSIX read
+    // returns available bytes immediately, so small progress updates reach the UI.
+    private static func nextChunk(from handle: FileHandle, buffer: inout [UInt8]) throws -> Data? {
+        let capacity = buffer.count
+        while true {
+            let count = buffer.withUnsafeMutableBytes { Darwin.read(handle.fileDescriptor, $0.baseAddress, capacity) }
+            if count > 0 { return Data(buffer.prefix(count)) }
+            if count == 0 { return nil }
+            if errno != EINTR { throw ArchiveError.invalidArchive }
         }
     }
     static func mapError(_ detail: String) -> ArchiveError {
