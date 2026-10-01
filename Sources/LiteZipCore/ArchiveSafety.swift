@@ -1,6 +1,25 @@
 import Foundation
 
 public enum ArchiveSafety {
+    /// Foundation silently hides AppleDouble entries on macOS. Source inspection
+    /// and snapshots must see them so the exclusion option controls the result.
+    static func directoryContents(_ url: URL) throws -> [URL] {
+        guard let directory = opendir(url.path) else { throw ArchiveError.permissionDenied }
+        defer { closedir(directory) }
+        var result = [URL]()
+        while true {
+            errno = 0
+            guard let entry = readdir(directory) else {
+                if errno != 0 { throw ArchiveError.permissionDenied }
+                return result
+            }
+            let name = withUnsafePointer(to: &entry.pointee.d_name) {
+                String(validatingCString: UnsafeRawPointer($0).assumingMemoryBound(to: CChar.self))
+            }
+            guard let name else { throw ArchiveError.ambiguousListing }
+            if name != "." && name != ".." { result.append(url.appendingPathComponent(name)) }
+        }
+    }
     public static func validate(path: String) throws {
         let normalized = path.replacingOccurrences(of: "\\", with: "/")
         guard !normalized.isEmpty, !normalized.hasPrefix("/"), !normalized.contains(":"),

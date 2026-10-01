@@ -30,6 +30,10 @@ final class AppPreferences: ObservableObject {
     @Published var level: CompressionLevel { didSet { UserDefaults.standard.set(level.rawValue, forKey: "level") } }
     @Published var revealResult: Bool { didSet { UserDefaults.standard.set(revealResult, forKey: "reveal") } }
     @Published var maximumGB: Int { didSet { UserDefaults.standard.set(maximumGB, forKey: "maximumGB") } }
+    @Published var rarPath: String { didSet { UserDefaults.standard.set(rarPath, forKey: "rarPath") } }
+    @Published var rarVersion = ""
+    @Published var connectingRAR = false
+    var rarURL: URL? { RAREngine.locate(configuredPath: rarPath) }
     init() {
         let defaults = UserDefaults.standard
         appearance = AppAppearance(rawValue: defaults.string(forKey: "appearance") ?? "跟随系统") ?? .system
@@ -38,6 +42,7 @@ final class AppPreferences: ObservableObject {
         level = CompressionLevel(rawValue: defaults.object(forKey: "level") as? Int ?? 5) ?? .normal
         revealResult = defaults.object(forKey: "reveal") as? Bool ?? true
         maximumGB = max(1, min(1000, defaults.object(forKey: "maximumGB") as? Int ?? 100))
+        rarPath = defaults.string(forKey: "rarPath") ?? ""
     }
 }
 
@@ -98,10 +103,16 @@ final class AppModel: ObservableObject {
         if mode == .extract {
             return files.contains { ArchiveFormat.detect($0) == nil } ? "解压模式仅支持压缩包，请移除普通文件或切换到压缩。" : nil
         }
+        if format == .rar && preferences.rarURL == nil { return ArchiveError.rarEngineMissing.localizedDescription }
+        if format == .rar && !separateArchives {
+            let names = files.map { $0.lastPathComponent.precomposedStringWithCanonicalMapping.lowercased() }
+            if Set(names).count != names.count { return "RAR 中的顶层项目不能同名。请勾选分别压缩，或先修改其中一个名称。" }
+        }
         if format.supportsPassword && !password.isEmpty {
             if passwordConfirmation != password { return passwordConfirmation.isEmpty ? "请再次输入密码以确认。" : "两次输入的密码不一致。" }
             if password.utf8.count > 4096 || password.contains("\n") || password.contains("\r") || password.contains("\0") { return "密码长度或字符不受支持。" }
             if format == .zip && (!password.unicodeScalars.allSatisfy({ $0.value < 128 }) || password.count > 99) { return ArchiveError.zipPasswordEncoding.localizedDescription }
+            if format == .rar && password.utf16.count > 127 { return ArchiveError.rarPasswordLength.localizedDescription }
         }
         if format.supportsVolumes { do { _ = try VolumeSize.parse(volumeSize) } catch { return error.localizedDescription } }
         if format.singleFileOnly && !files.isEmpty {
@@ -126,11 +137,36 @@ final class AppModel: ObservableObject {
         Bundle.main.url(forResource: "7zz", withExtension: nil, subdirectory: "Engine") ?? Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/Engine/7zz")
     }
     var service: ArchiveService {
-        ArchiveService(engineURL: engineURL, maximumExtractedBytes: Int64(preferences.maximumGB) * 1_024 * 1_024 * 1_024)
+        ArchiveService(engineURL: engineURL, rarURL: preferences.rarURL, maximumExtractedBytes: Int64(preferences.maximumGB) * 1_024 * 1_024 * 1_024)
     }
     init() {
         format = preferences.defaultFormat; level = preferences.level; formatChanged()
         Task.detached(priority: .utility) { ArchiveService.cleanupAbandonedTemporaryFiles() }
+        refreshRAREngine()
+    }
+    func refreshRAREngine() {
+        guard let url = preferences.rarURL else { preferences.rarVersion = ""; return }
+        Task {
+            let version = try? await RAREngine.version(at: url)
+            if preferences.rarURL == url { preferences.rarVersion = version ?? "" }
+        }
+    }
+    func connectRAREngine() {
+        let panel = NSOpenPanel()
+        panel.title = "连接官方 RAR 引擎"; panel.prompt = "连接"
+        panel.canChooseDirectories = false; panel.canChooseFiles = true; panel.allowsMultipleSelection = false
+        panel.message = "选择 RARLAB 官方 macOS 软件包内的 rar 文件。引擎留在原位置，请保留该软件包及许可文件。"
+        present(panel, preferredWindow: NSApp.keyWindow) { [weak self] response in
+            guard let self, response == .OK, let url = panel.url else { return }
+            preferences.connectingRAR = true
+            Task {
+                defer { preferences.connectingRAR = false }
+                do {
+                    let version = try await RAREngine.version(at: url)
+                    preferences.rarPath = url.path; preferences.rarVersion = version
+                } catch { errorMessage = ArchiveError.invalidRAREngine.localizedDescription }
+            }
+        }
     }
     func receive(_ urls: [URL]) {
         let valid = urls.filter { $0.isFileURL && FileManager.default.fileExists(atPath: $0.path) }
@@ -153,7 +189,7 @@ final class AppModel: ObservableObject {
             }
         } else { receive(files) }
     }
-    private func present(_ panel: NSSavePanel, completion: @escaping (NSApplication.ModalResponse) -> Void) {
+    private func present(_ panel: NSSavePanel, preferredWindow: NSWindow? = nil, completion: @escaping (NSApplication.ModalResponse) -> Void) {
         guard activePanel == nil else { return }
         activePanel = panel
         let handler: (NSApplication.ModalResponse) -> Void = { [weak self] response in
@@ -163,7 +199,7 @@ final class AppModel: ObservableObject {
         // The closing browser sheet can briefly remain the key window. Attach
         // file panels to the main window after its previous sheet has detached.
         Task { @MainActor in
-            if let window = NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }) {
+            if let window = preferredWindow ?? NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }) {
                 for _ in 0..<50 where window.attachedSheet != nil { try? await Task.sleep(for: .milliseconds(100)) }
                 guard window.isVisible, window.attachedSheet == nil else {
                     activePanel = nil; errorMessage = "请先关闭当前对话框，再选择保存位置。"; return
@@ -207,7 +243,7 @@ final class AppModel: ObservableObject {
             panel.title = "保存压缩包"; panel.canCreateDirectories = true
             panel.nameFieldStringValue = inputs.count == 1 ? CompressionPlanning.name(for: inputs[0], format: options.format) : "Archive." + options.format.suffix
             panel.directoryURL = inputs[0].deletingLastPathComponent()
-            if options.volumeSizeBytes != nil { panel.message = "整组分卷保存到同名 .parts 文件夹。解压时将所有分卷放在一起，打开 .001 文件。" }
+            if options.volumeSizeBytes != nil { panel.message = options.format == .rar ? "整组分卷保存到同名 .parts 文件夹。保留所有分卷，打开 .part1.rar 首卷解压（编号可能补零）。" : "整组分卷保存到同名 .parts 文件夹。解压时将所有分卷放在一起，打开 .001 文件。" }
             present(panel) { [weak self] response in
                 guard let self, response == .OK, let url = panel.url else { return }
                 let destination = url.lastPathComponent.lowercased().hasSuffix("." + options.format.suffix) ? url : url.appendingPathExtension(options.format.suffix)

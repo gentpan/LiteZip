@@ -14,13 +14,15 @@ public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable
         switch self { case .sevenZip: "7z"; case .tarGzip: "tar.gz"; case .gzip: "gz"; case .bzip2: "bz2"; case .zstd: "zst"; default: rawValue }
     }
     public var engineType: String { self == .sevenZip ? "7z" : rawValue }
-    public var canCreate: Bool { self != .rar }
+    /// RAR creation additionally requires a separately installed official engine.
+    public var canCreate: Bool { true }
     public var supportsPassword: Bool { [.zip, .sevenZip, .rar].contains(self) }
     public var singleFileOnly: Bool { [.gzip, .bzip2, .xz, .zstd].contains(self) }
-    public var supportsVolumes: Bool { [.zip, .sevenZip].contains(self) }
-    public var supportsStore: Bool { [.zip, .sevenZip].contains(self) }
-    /// Numbered ZIP/7Z volumes use at least three digits, beginning with .001.
+    public var supportsVolumes: Bool { [.zip, .sevenZip, .rar].contains(self) }
+    public var supportsStore: Bool { [.zip, .sevenZip, .rar].contains(self) }
+    /// ZIP/7Z use .001; modern RAR uses .part1.rar (possibly zero padded).
     public static func firstVolume(_ url: URL) -> URL? {
+        if let part = RARVolume(url) { return part.firstURL }
         let number = url.pathExtension
         let base = url.deletingPathExtension()
         guard number.count >= 3, number.allSatisfy({ $0.isASCII && $0.isNumber }),
@@ -30,6 +32,7 @@ public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable
     }
     public static func detect(_ url: URL) -> ArchiveFormat? {
         if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { return nil }
+        if RARVolume(url) != nil { return .rar }
         if firstVolume(url) != nil { return detect(url.deletingPathExtension()) }
         let name = url.lastPathComponent.lowercased()
         if name.hasSuffix(".tar.gz") || name.hasSuffix(".tgz") { return .tarGzip }
@@ -50,6 +53,7 @@ public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable
         return nil
     }
     public static func baseName(_ url: URL) -> String {
+        if let part = RARVolume(url) { return part.stem }
         if firstVolume(url) != nil { return baseName(url.deletingPathExtension()) }
         let name = url.lastPathComponent
         for suffix in [".tar.gz", ".tar.bz2", ".tar.xz", ".tar.zst", ".tgz", ".tbz2", ".txz"] {
@@ -111,6 +115,7 @@ public struct ArchiveProgress: Sendable {
 public enum ArchiveError: Error, LocalizedError, Sendable, Equatable {
     case invalidArchive, corruptedArchive, wrongPassword, unsupportedFormat, missingVolume, diskFull, permissionDenied, cancelled
     case unsafePath, linksUnsupported, tooLarge, ambiguousListing, invalidInput, engineMissing, zipPasswordEncoding, invalidVolumeSize
+    case rarEngineMissing, invalidRAREngine, rarPasswordLength
     public var errorDescription: String? {
         switch self {
         case .invalidArchive: "这个文件不是有效的压缩包，或文件头已损坏。"
@@ -126,9 +131,12 @@ public enum ArchiveError: Error, LocalizedError, Sendable, Equatable {
         case .tooLarge: "预计展开大小超过安全限制（默认 100 GB），请检查压缩包或调整设置。"
         case .ambiguousListing: "文件名包含无法安全解析的换行或元数据，已停止处理。"
         case .invalidInput: "请选择有效的文件；单文件压缩格式只能处理一个普通文件。"
-        case .zipPasswordEncoding: "ZIP 加密支持不超过 99 个 ASCII 字符（英文、数字和符号）。中文、Emoji 或更长密码请选择 7Z。"
-        case .invalidVolumeSize: "分卷大小应为 1 MB 到 1 TB，例如 100 MB 或 1.5 GB。仅 ZIP 和 7Z 支持分卷。"
+        case .zipPasswordEncoding: "ZIP 加密支持不超过 99 个 ASCII 字符（英文、数字和符号）。中文或 Emoji 密码请选择 7Z 或 RAR。"
+        case .invalidVolumeSize: "分卷大小应为 1 MB 到 1 TB，例如 100 MB 或 1.5 GB。仅 ZIP、7Z 和 RAR 支持分卷。"
         case .engineMissing: "内置压缩引擎缺失，请重新安装 LiteZip。"
+        case .rarEngineMissing: "创建 RAR 需要官方 RAR 引擎，请先在设置中连接本机的 rar 可执行文件。RAR 解压无需额外安装。"
+        case .invalidRAREngine: "请选择 RARLAB 官方 macOS 软件包中的 rar 可执行文件（RAR 7 或更新版本）。"
+        case .rarPasswordLength: "RAR 密码最多 127 个字符，部分 Emoji 占两个字符。请缩短密码后重试。"
         }
     }
 }

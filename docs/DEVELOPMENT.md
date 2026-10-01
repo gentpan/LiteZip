@@ -4,7 +4,7 @@
 
 ## 架构
 
-`SwiftUI / AppKit → AppModel（任务队列）→ ArchiveServiceProtocol → ArchiveService → 独立 7zz / zstd 引擎进程`
+`SwiftUI / AppKit → AppModel（任务队列）→ ArchiveServiceProtocol → ArchiveService → 独立 7zz / zstd / 可选本机 rar 引擎进程`
 
 - macOS 13 为最低目标；Swift 6 严格并发检查；App、扩展、引擎均构建 arm64 / x86_64。
 - `LiteZipCore` 只依赖 Foundation 与 Darwin，可由未来 CLI 复用。
@@ -17,7 +17,7 @@
 
 | 问题 | 本次决策 |
 | --- | --- |
-| 内置引擎和安装依赖 | 7-Zip 官方 universal 独立可替换引擎；ZSTD 独立 universal 工具；无需用户安装其他工具 |
+| 内置引擎和安装依赖 | 7-Zip 官方 universal 独立引擎；ZSTD 独立 universal 工具；RAR 创建单独连接用户安装的官方编码器，其他功能无需额外工具 |
 | 压缩成功的判断 | 默认在引擎完成后进行完整性检查，再发布结果；用户可关闭数据校验，目录安全检查始终执行 |
 | 取消／输出冲突 | 终止正在运行的引擎，必要时强制终止；删除临时结果；`RENAME_EXCL` 防止并发任务覆盖 |
 | 临时文件位置 | 放在目标目录同级的私有 `.LiteZip-UUID` 目录，保证同一卷的原子发布；本地日志登记以清理崩溃残留 |
@@ -53,3 +53,13 @@
 - 浏览器关闭后再把标准保存面板附在主窗口上，等待前一个 sheet 完全分离。密码不会因模式变化的异步视图更新而被意外清空。
 
 范围仍是 ZIP／7Z／TAR／TAR.GZ 与四种单文件流、RAR 解压。Keka 截图中的 DMG、ISO、WIM 等格式以及分卷 RAR 创建未在本版实现。删除源文件不加入本版；源数据始终保留。
+
+## 0.3.0：可选 RAR 创建
+
+- RAR 解码继续使用内置 7-Zip。编码调用用户单独安装的官方 RAR 7+，只保存本机执行文件路径，不复制或再分发引擎／注册密钥。试用与购买遵循 [RARLAB 许可](https://www.rarlab.com/license.htm)，LiteZip 不代理购买。
+- 连接时检查官方版本输出并限制探测时间；常用安装位置支持自动查找。引擎缺失时压缩按钮给出连接提示，解压功能照常可用。
+- 原生六档等级映射 RAR `-m0` 至 `-m5`，字典上限 32 MiB、两个工作线程；`-cfg-` 禁用用户配置，`-ds` 禁用外部排序规则。密码通过标准输入传给 `-hp`，同时加密内容和文件名，提前拒绝超过 127 UTF-16 单元的密码，避免静默截断。
+- 官方编码器没有与 7-Zip `-spd` 对等的字面通配符选项。RAR 因此只读取私有 `inputs` 快照中的常量 `.`，不接收源名称作为匹配模式。APFS 用 `clonefile(CLONE_NOFOLLOW)`；不支持克隆时使用 `O_NOFOLLOW`、独占创建和 64 KiB 可取消复制。快照不使用硬链接，权限和时间戳修改不影响源文件。不同目录中的同名顶层项目拒绝合包，可分别压缩。
+- 源枚举改用 `readdir`，因为 Foundation 会隐去 AppleDouble 文件；排除开关由 LiteZip 明确控制，预估大小与实际归档一致。
+- `.partN.rar` 分卷支持补零，生成后使用内置解码器校验，整组原子发布。打开后续卷归一到首卷；编号连续性、重复编号、缺首卷、符号链接和特殊卷拒绝，缺尾卷由完整性校验发现。
+- RAR 官方二进制不进入仓库、App 或 GitHub CI。五组编码集成测试通过 `LITEZIP_RAR_TEST_ENGINE` 明确启用，普通 CI 验证缺引擎提示、首卷规则、解码和原有格式回归。

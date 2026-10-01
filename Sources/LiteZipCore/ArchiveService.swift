@@ -5,8 +5,9 @@ public struct ArchiveService: ArchiveServiceProtocol {
     public let engineURL: URL
     public let maximumExtractedBytes: Int64
     public let zstdURL: URL
-    public init(engineURL: URL, zstdURL: URL? = nil, maximumExtractedBytes: Int64 = 100 * 1_024 * 1_024 * 1_024) {
-        self.engineURL = engineURL; self.zstdURL = zstdURL ?? engineURL.deletingLastPathComponent().appendingPathComponent("zstd"); self.maximumExtractedBytes = maximumExtractedBytes
+    public let rarURL: URL?
+    public init(engineURL: URL, zstdURL: URL? = nil, rarURL: URL? = nil, maximumExtractedBytes: Int64 = 100 * 1_024 * 1_024 * 1_024) {
+        self.engineURL = engineURL; self.zstdURL = zstdURL ?? engineURL.deletingLastPathComponent().appendingPathComponent("zstd"); self.rarURL = rarURL; self.maximumExtractedBytes = maximumExtractedBytes
     }
     public func list(archive: URL, password: String? = nil, control: OperationControl = .init()) async throws -> [ArchiveEntry] {
         try await background(control: control) { try withPreparedInput(archive, password: password, control: control) { _, entries in entries } }
@@ -31,6 +32,10 @@ public struct ArchiveService: ArchiveServiceProtocol {
     public func compress(files: [URL], destination: URL, options: CompressionOptions = .init(), control: OperationControl = .init(), progress: @escaping @Sendable (ArchiveProgress) -> Void = { _ in }) async throws -> URL {
         try await background(control: control) {
             guard !files.isEmpty, options.format.canCreate else { throw ArchiveError.unsupportedFormat }
+            if options.format == .rar {
+                guard let rarURL, FileManager.default.isExecutableFile(atPath: rarURL.path) else { throw ArchiveError.rarEngineMissing }
+                if let password = options.password, password.utf16.count > 127 { throw ArchiveError.rarPasswordLength }
+            }
             if options.level == .store && !options.format.supportsStore { throw ArchiveError.unsupportedFormat }
             if let size = options.volumeSizeBytes {
                 guard options.format.supportsVolumes, size >= VolumeSize.minimum, size <= VolumeSize.maximum else { throw ArchiveError.invalidVolumeSize }
@@ -53,7 +58,9 @@ public struct ArchiveService: ArchiveServiceProtocol {
             }
             if let size = options.volumeSizeBytes, total / size >= 10_000 { throw ArchiveError.tooLarge }
             let directory = destination.deletingLastPathComponent()
-            guard ArchiveSafety.availableBytes(at: directory) > total + 16 * 1_024 * 1_024 else { throw ArchiveError.diskFull }
+            let copies: Int64 = options.format == .rar ? 2 : 1
+            guard total <= (Int64.max - 16 * 1_024 * 1_024) / copies,
+                  ArchiveSafety.availableBytes(at: directory) > total * copies + 16 * 1_024 * 1_024 else { throw ArchiveError.diskFull }
             let staging = try makeStaging(in: directory)
             defer { StagingRegistry.remove(staging) }
             let volumeDirectory = staging.appendingPathComponent("volumes", isDirectory: true)
@@ -92,7 +99,18 @@ public struct ArchiveService: ArchiveServiceProtocol {
                 if options.format == .zip { arguments.append("-mem=AES256") }
                 if options.format == .sevenZip { arguments.append("-mhe=on") }
             }
-            if options.format == .zstd {
+            if options.format == .rar {
+                let input = staging.appendingPathComponent("inputs", isDirectory: true)
+                progress(ArchiveProgress(totalBytes: total, currentFile: "准备 RAR 文件快照…"))
+                try prepareRARSources(canonicalFiles, at: input, excludeMacResources: options.excludeMacResources, control: control)
+                // Six UI levels map to RAR's six methods. Disable user configuration
+                // and sorting; limit dictionary memory and worker count explicitly.
+                let method = CompressionLevel.allCases.firstIndex(of: options.level)!
+                var rarArguments = ["a", "-cfg-", "-m\(method)", "-md32m", "-mt2", "-idcn", "-ds", "-@", "-r"]
+                if options.password?.isEmpty == false { rarArguments.append("-hp") }
+                if let size = options.volumeSizeBytes { rarArguments.append("-v\(size)b") }
+                _ = try ProcessRunner(executable: rarURL!).run(rarArguments + ["--", partial.path, "."], directory: input, password: options.password, control: control, output: report)
+            } else if options.format == .zstd {
                 let zstd = zstdURL
                 _ = try ProcessRunner(executable: zstd).run(["-q", "-T2", "-\(options.level.rawValue)", "-o", partial.path, "--", canonicalFiles[0].path], control: control)
             } else if options.format == .tarGzip {
@@ -103,7 +121,13 @@ public struct ArchiveService: ArchiveServiceProtocol {
                 _ = try runner.run(arguments + ["--", partial.path] + paths, directory: workingDirectory, password: options.password, control: control, output: report)
             }
             try control.check()
-            let readable = options.volumeSizeBytes == nil ? partial : partial.appendingPathExtension("001")
+            let readable: URL
+            if options.volumeSizeBytes == nil { readable = partial }
+            else if options.format == .rar {
+                let parts = try FileManager.default.contentsOfDirectory(at: volumeDirectory, includingPropertiesForKeys: nil)
+                guard let first = parts.first(where: { RARVolume($0)?.index == 1 }) else { throw ArchiveError.missingVolume }
+                readable = first
+            } else { readable = partial.appendingPathExtension("001") }
             if options.verifyArchive {
                 progress(ArchiveProgress(processedBytes: total, totalBytes: total, currentFile: "正在验证完整性…"))
                 _ = try runner.run(["t", "-bd", "-bso0", "-bse2", "--", readable.path], password: options.password, control: control)
@@ -197,7 +221,7 @@ public struct ArchiveService: ArchiveServiceProtocol {
         guard values.isSymbolicLink != true else { throw ArchiveError.linksUnsupported }
         guard !url.lastPathComponent.contains("\n"), !url.lastPathComponent.contains("\r") else { throw ArchiveError.ambiguousListing }
         if values.isDirectory == true {
-            for child in try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil) {
+            for child in try ArchiveSafety.directoryContents(url) {
                 try inspectSource(child, excludeMacResources: excludeMacResources, control: control, total: &total)
             }
         } else {
@@ -208,6 +232,20 @@ public struct ArchiveService: ArchiveServiceProtocol {
         }
     }
     private func validatedInput(_ archive: URL) throws -> URL {
+        if let part = RARVolume(archive) {
+            let siblings = try FileManager.default.contentsOfDirectory(at: archive.deletingLastPathComponent(), includingPropertiesForKeys: [.isSymbolicLinkKey, .isRegularFileKey])
+            var indices = Set<Int>()
+            for file in siblings {
+                guard let sibling = RARVolume(file), sibling.prefix.lowercased() == part.prefix.lowercased() else { continue }
+                guard sibling.width == part.width, sibling.canonicalName == file.lastPathComponent,
+                      (1...10_000).contains(sibling.index), indices.insert(sibling.index).inserted else { throw ArchiveError.missingVolume }
+                let values = try file.resourceValues(forKeys: [.isSymbolicLinkKey, .isRegularFileKey])
+                guard values.isSymbolicLink != true, values.isRegularFile == true else { throw ArchiveError.linksUnsupported }
+            }
+            guard let last = indices.max(), indices.count == last, indices.contains(1),
+                  FileManager.default.fileExists(atPath: part.firstURL.path) else { throw ArchiveError.missingVolume }
+            return part.firstURL
+        }
         guard let first = ArchiveFormat.firstVolume(archive) else { return archive }
         let base = first.deletingPathExtension().lastPathComponent + "."
         let siblings = try FileManager.default.contentsOfDirectory(at: first.deletingLastPathComponent(), includingPropertiesForKeys: [.isSymbolicLinkKey, .isRegularFileKey])

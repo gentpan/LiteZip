@@ -16,6 +16,19 @@ struct MainView: View {
             ScrollView {
                 VStack(alignment: .leading, spacing: 18) {
                     if model.mode == .compress {
+                        if model.format == .rar {
+                            VStack(alignment: .leading, spacing: 8) {
+                                HStack {
+                                    Label(preferences.rarURL == nil ? "RAR 压缩需要连接官方引擎" : (preferences.rarVersion.isEmpty ? "已找到本机 RAR 引擎" : preferences.rarVersion + " 已连接"), systemImage: preferences.rarURL == nil ? "puzzlepiece.extension" : "checkmark.circle")
+                                    Spacer()
+                                    Button(preferences.connectingRAR ? "检查中…" : "连接引擎…", action: model.connectRAREngine).disabled(preferences.connectingRAR)
+                                }
+                                HStack {
+                                    Text("RAR 解压已内置。官方压缩引擎可试用 40 天，之后需购买许可。")
+                                    Link("官方下载", destination: URL(string: "https://www.rarlab.com/download.htm")!)
+                                }.font(.caption).foregroundStyle(.secondary)
+                            }
+                        }
                         compressionSettings
                         VStack(alignment: .leading, spacing: 11) {
                             Toggle("排除 Mac 资源文件", isOn: $model.excludeMacResources)
@@ -121,13 +134,13 @@ struct MainView: View {
             PasswordInput(label: "重复", placeholder: "再次输入密码", text: $model.passwordConfirmation, visible: $model.showPassword, showsVisibilityButton: false)
                 .disabled(!model.format.supportsPassword || model.password.isEmpty)
             if model.format.supportsPassword {
-                Label(model.format == .sevenZip ? "AES-256 加密 · 同时加密文件名" : "AES-256 加密 · 密码使用 1–99 个 ASCII 字符", systemImage: "lock.fill")
+                Label(model.format == .zip ? "AES-256 加密 · 密码使用 1–99 个 ASCII 字符" : "AES-256 加密 · 同时加密文件名" + (model.format == .rar ? " · 密码最长 127 字符" : ""), systemImage: "lock.fill")
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             } else if model.format.singleFileOnly {
                 Text("每个压缩包包含一个普通文件；多个文件可分别压缩。").font(.caption).foregroundStyle(.secondary)
             }
             if !model.volumeSize.isEmpty && model.format.supportsVolumes {
-                Text("分卷保存到 .parts 文件夹。保留整组文件，打开 .001 解压。大小按 1 MB = 1024² 字节计算。")
+                Text(model.format == .rar ? "分卷保存到 .parts 文件夹，打开 .part1.rar 首卷（编号可能补零）。大小按 1 MB = 1024² 字节计算。" : "分卷保存到 .parts 文件夹。保留整组文件，打开 .001 解压。大小按 1 MB = 1024² 字节计算。")
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             }
         }.padding(20).background(RoundedRectangle(cornerRadius: 14).fill(Color.primary.opacity(0.035)))
@@ -135,7 +148,7 @@ struct MainView: View {
     private var extractionSettings: some View {
         VStack(alignment: .leading, spacing: 16) {
             Label("解压到独立文件夹", systemImage: "folder.badge.plus").font(.headline)
-            Text("同名结果自动编号。ZIP／7Z 分卷会从第一卷读取整组内容。").font(.callout).foregroundStyle(.secondary)
+            Text("同名结果自动编号。ZIP／7Z 和 .partN.rar 分卷会从第一卷读取整组内容。").font(.callout).foregroundStyle(.secondary)
             PasswordInput(label: "密码", placeholder: "加密压缩包可在这里输入密码", text: $model.password, visible: $model.showPassword, showsVisibilityButton: true)
         }.padding(20).background(RoundedRectangle(cornerRadius: 14).fill(Color.primary.opacity(0.035)))
     }
