@@ -84,23 +84,34 @@ LITEZIP_RAR_TEST_ENGINE='/absolute/path/to/rar' swift test  # 可选官方 RAR �
 
 ## 签名与公证
 
-开发预览构建可以使用自己的 Developer ID 证书：
+发布的 **0.4.0 已完成 Developer ID 签名与 Apple 公证**，ZIP 内的 App 已附上公证凭据。重新解包后，签名、公证凭据和 Gatekeeper 检查均通过。公证用于从 GitHub 等渠道分发，不代表上架 Mac App Store。
+
+本机发布只需构建后执行签名脚本；它会自动提交公证、附上凭据、验证并打包：
 
 ```sh
-export LITEZIP_SIGN_IDENTITY='Developer ID Application: Your Name (TEAMID)'
+Scripts/build.sh
 Scripts/sign.sh
 ```
 
-签名脚本依次签名内置引擎、Finder 扩展和 App，启用 Hardened Runtime 和安全时间戳，验证后生成 ZIP 与 SHA-256 校验值。证书与私钥不进入仓库。
-
-**本次本地构建已完成 Developer ID 签名，尚未完成 Apple 公证。** 从网络下载后可能被 Gatekeeper 拦截；这不是已通过全部发布门禁的 v1.0。正式分发前需使用自己的公证凭据完成：
+本机只有一个有效的 Developer ID Application 签名身份时自动选择；多个身份时需明确指定。公证默认复用维护者现有的 `GiantAccel` Keychain 配置。其他开发者需设置自己的证书和已保存的公证配置：
 
 ```sh
+export LITEZIP_SIGN_IDENTITY='Developer ID Application: Your Name (TEAMID)'
 export LITEZIP_NOTARY_PROFILE='your-saved-keychain-profile'
-Scripts/notarize.sh
+Scripts/sign.sh
 ```
 
-GitHub Actions 的构建产物为未签名开发构建。
+签名脚本依次签名内置引擎、Finder 扩展和 App，启用 Hardened Runtime 和安全时间戳。只有 Apple 返回 `Accepted`、公证凭据验证成功、完整签名与 Gatekeeper 检查通过后，才替换 `dist` 中的最终 ZIP 与 SHA-256 校验值。版本号从 App 读取；可用 `LITEZIP_DIST_DIR` 指定输出目录。证书、私钥和账号授权只从本机 Keychain 调用，不进入仓库。
+
+两个脚本都可以指定 App 路径；已有有效 Developer ID 签名的 App 可以直接公证。公证在私有副本上进行，最终 ZIP 包含附上凭据的 App。提交编号、Apple 检查日志和副本保留在输出目录的 `.notarize-*` 目录，失败不会替换已有下载包：
+
+```sh
+Scripts/notarize.sh /absolute/path/to/LiteZip.app
+```
+
+公证需要 Apple Developer Program 账号授权；已有有效配置可以复用，不需为每个 App 单独注册公证。首次配置参考 [Apple 公证工作流](https://developer.apple.com/documentation/security/customizing-the-notarization-workflow)，使用 `notarytool store-credentials` 保存到 Keychain，不把密码写入脚本。
+
+GitHub Actions 的构建产物为未签名开发构建，Release 下载包为签名及公证后的版本。
 
 ## 实现与边界
 

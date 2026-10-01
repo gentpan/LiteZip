@@ -34,7 +34,7 @@
 2. 实测 10 / 50 / 100 GB、10 万小文件、低磁盘空间、外接盘与 macOS 13 真机；建立内存、取消延迟和启动时间基线。
 3. 扩展与主应用间增加 XPC 协议，完善无主窗口的 Finder 快速操作与扩展启用诊断。
 4. 完善 metadata、resource fork、extended attributes、权限和时间戳策略；针对允许的链接单独建立安全规则。
-5. Apple 公证、Gatekeeper 完整验证、英文和其他语言本地化、通知点击显示结果。
+5. 英文和其他语言本地化、通知点击显示结果。
 6. 按实际需求增加选择性提取、Quick Look、更多分卷格式、复用核心的 CLI 和 SHA-256 校验；更新框架等待正式发布与更新源配置后再引入。
 7. Mac App Store 另做 Sandbox 版本与 security-scoped bookmarks，不将当前 Developer ID 版本冒充 App Store 就绪。
 
@@ -77,3 +77,11 @@
 - 新创建的 DMG 必须通过目录检查；可选数据校验使用 hdiutil verify。发布仍为同卷不覆盖原子重命名，按三份源大小和 64 MiB 余量预检空间。
 
 ISO、SIT/SITX、CPIO/XAR/XIP 等放到后续兼容性批次。先根据真实样本验证读取，再增加 UI 入口；ISO 与安装包的制作不列入通用压缩菜单。
+
+## 签名与公证发布
+
+- `Scripts/sign.sh` 默认完成整个分发流程：Developer ID 签名 → Apple 公证 → 在私有 App 副本附上公证凭据 → 完整签名、公证凭据和 Gatekeeper 验证 → 最终 ZIP 与 SHA-256。不在公证前生成供发布的最终包。
+- 从 App 的 `CFBundleShortVersionString` 生成文件名，接受明确的 App 路径和输出目录。私有副本保证等待 Apple 期间的其他构建不会修改提交的文件。
+- 复用现有 Keychain 公证配置；公证是每个发布构建的检查流程，不是为 App 注册新的证书或创建 App Store 页面。账号配置可以跨 App 复用。
+- 明确检查 Apple 的 `Accepted` 状态。账号失效、Apple 拒绝、公证凭据附加／验证失败或 Gatekeeper 拒绝都中止发布并保留日志，既有发布包和校验值保留。
+- 0.4.0 已完成实际提交和最终 ZIP 重新解包验证。GitHub CI 使用无凭据的替身测试验证发布失败保护；构建产物仍是明确标注的未签名开发包。

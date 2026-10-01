@@ -17,6 +17,8 @@ jobs:
           persist-credentials: false
       - name: Core integration and security tests
         run: swift test
+      - name: Release publication guards (no credentials)
+        run: python3 Tests/ReleaseScriptsTests.py
       - name: Install XcodeGen
         run: brew install xcodegen
       - name: Universal release build (unsigned)

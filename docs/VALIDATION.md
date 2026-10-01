@@ -41,13 +41,16 @@
 - DMG 重复顶层项目、非法密码、分卷选项与预先取消拒绝；正常和错误密码预览后检查无 LiteZip 遗留挂载。
 - 私有挂载点和临时路径通过 realpath 对齐 /var 与 /private/var；清理前枚举挂载点，卸载失败时不删除挂载内容。
 
-## 构建与签名
+## 构建、签名与公证
 
 - App、Finder 扩展、7zz、zstd 均为 arm64 + x86_64 universal Mach-O。
 - Apple Silicon 原生实测；7zz 的 x86_64 slice 已通过 Rosetta 启动检查；Intel 真机未验收。
 - Developer ID 签名含 Hardened Runtime 与时间戳；`codesign --verify --deep --strict` 通过。
 - 证书只从本机 Keychain 调用，仓库不包含证书、私钥或公证凭据。
-- **未公证**：`spctl` 返回 `Unnotarized Developer ID`。尚未满足正式发布 Gatekeeper 门禁。
+- **已公证**：2026-10-02 通过实际 `Scripts/sign.sh` 自动流程提交 v0.4.0。Apple 返回 `Accepted`，检查日志无 issues；提交编号 `a29867a0-05ef-498c-b5ae-6be57656728c`。
+- 最终 ZIP 重新解包后，`codesign --verify --deep --strict`、`xcrun stapler validate` 均通过；`spctl --assess --type execute` 返回 `accepted`、`source=Notarized Developer ID`。
+- 公证后 ZIP 为 4,380,021 字节；SHA-256：`e15d244fb5f4c17c448a7df9bfc2dc90284cda1139410ce73859e5983e57ca74`。
+- `python3 Tests/ReleaseScriptsTests.py` 四组测试通过：错误签名不提交；账号失效不改变签名；Apple 拒绝、等待错误、附凭据失败、凭据验证失败和 Gatekeeper 拒绝均保留之前的包与校验值；正常签名自动公证并按 App 版本生成校验值。
 - Finder 扩展的 `NSExtensionPointIdentifier` 和应用版本由构建脚本校验，扩展可由 `pluginkit` 注册。
 
 ## 0.4.0 原生界面实测
@@ -90,4 +93,4 @@
 
 ## 尚未验收
 
-10–100 GB 数据、10 万小文件、峰值内存基线、冷启动目标、真实低磁盘与权限拒绝、RAR 在非 APFS 文件系统的复制性能与取消延迟、资源分叉／扩展属性、最低系统版本真机、全键盘与 VoiceOver、完整本地化、App Store Sandbox、Apple 公证。
+10–100 GB 数据、10 万小文件、峰值内存基线、冷启动目标、真实低磁盘与权限拒绝、RAR 在非 APFS 文件系统的复制性能与取消延迟、资源分叉／扩展属性、最低系统版本真机、全键盘与 VoiceOver、完整本地化、App Store Sandbox。
