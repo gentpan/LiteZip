@@ -1,0 +1,529 @@
+// !$*UTF8*$!
+{
+	archiveVersion = 1;
+	classes = {
+	};
+	objectVersion = 77;
+	objects = {
+
+/* Begin PBXBuildFile section */
+		01443A0D924C18D6A4D0B83A /* FinderSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EC6913B7859ACFFAFC599A0 /* FinderSync.swift */; };
+		4FE161CEF7475E4E786A613E /* FinderSync.framework in Frameworks */ = {isa = PBXBuildFile; fileRef = A94A9534DE03856279B37C1B /* FinderSync.framework */; };
+		56DF7359A9A5E674D57B8151 /* LiteZipFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7F4D4074CB82632A41D3E9EF /* LiteZipFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		743F75D4B82075656CB8B5B5 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5605A8D30DB1284F17157F79 /* MainView.swift */; };
+		8A80261459B5F4F28BB00DEC /* AppModel.swift in Sources */ = {isa = PBXBuildFile; fileRef = 566B6612429758F32E497C05 /* AppModel.swift */; };
+		BB74C5A17881CB1CF6D00A81 /* ArchiveBrowserView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 3E943D630D176C0DF05FEE7E /* ArchiveBrowserView.swift */; };
+		D205AF9048D386CE9E33BD05 /* SettingsView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 523966E6CBF0EBF55AAE61B6 /* SettingsView.swift */; };
+		FA110FE1B482A01E810C8530 /* LiteZipCore in Frameworks */ = {isa = PBXBuildFile; productRef = E8A7AA16996EDDBEC4BB83F5 /* LiteZipCore */; };
+		FC644EAD99535E74158FDBC1 /* LiteZipApp.swift in Sources */ = {isa = PBXBuildFile; fileRef = E8A76FA8A6E7C96A7EF35897 /* LiteZipApp.swift */; };
+/* End PBXBuildFile section */
+
+/* Begin PBXContainerItemProxy section */
+		47FA593D264C8AC2C8CD483E /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 20DD3175F2002FF5CDDB1F02 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 81A7AD8BB29D48315D888CF2;
+			remoteInfo = LiteZipFinder;
+		};
+/* End PBXContainerItemProxy section */
+
+/* Begin PBXCopyFilesBuildPhase section */
+		578878D1062C3CE23D1DFDDD /* Embed Foundation Extensions */ = {
+			isa = PBXCopyFilesBuildPhase;
+			buildActionMask = 2147483647;
+			dstPath = "";
+			dstSubfolderSpec = 13;
+			files = (
+				56DF7359A9A5E674D57B8151 /* LiteZipFinder.appex in Embed Foundation Extensions */,
+			);
+			name = "Embed Foundation Extensions";
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXCopyFilesBuildPhase section */
+
+/* Begin PBXFileReference section */
+		0EC6913B7859ACFFAFC599A0 /* FinderSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderSync.swift; sourceTree = "<group>"; };
+		1CF775459AE87452E2015E65 /* LiteZIP */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LiteZIP; path = .; sourceTree = SOURCE_ROOT; };
+		204EB02AE8AD445B7B92A426 /* LiteZip.app */ = {isa = PBXFileReference; explicitFileType = wrapper.application; includeInIndex = 0; path = LiteZip.app; sourceTree = BUILT_PRODUCTS_DIR; };
+		3E943D630D176C0DF05FEE7E /* ArchiveBrowserView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = ArchiveBrowserView.swift; sourceTree = "<group>"; };
+		523966E6CBF0EBF55AAE61B6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
+		5605A8D30DB1284F17157F79 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
+		566B6612429758F32E497C05 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		7F4D4074CB82632A41D3E9EF /* LiteZipFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LiteZipFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		A94A9534DE03856279B37C1B /* FinderSync.framework */ = {isa = PBXFileReference; lastKnownFileType = wrapper.framework; name = FinderSync.framework; path = System/Library/Frameworks/FinderSync.framework; sourceTree = SDKROOT; };
+		E8A76FA8A6E7C96A7EF35897 /* LiteZipApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteZipApp.swift; sourceTree = "<group>"; };
+/* End PBXFileReference section */
+
+/* Begin PBXFrameworksBuildPhase section */
+		7889ABC7AD3516BD21BA4220 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				FA110FE1B482A01E810C8530 /* LiteZipCore in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B2718DE255BB746C2BA89FA6 /* Frameworks */ = {
+			isa = PBXFrameworksBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				4FE161CEF7475E4E786A613E /* FinderSync.framework in Frameworks */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXFrameworksBuildPhase section */
+
+/* Begin PBXGroup section */
+		06A2AA298603FAC03E501236 /* Frameworks */ = {
+			isa = PBXGroup;
+			children = (
+				A94A9534DE03856279B37C1B /* FinderSync.framework */,
+			);
+			name = Frameworks;
+			sourceTree = "<group>";
+		};
+		35245A62D2D86EA8CDC54225 /* Sources */ = {
+			isa = PBXGroup;
+			children = (
+				62B73B58886F5CB7E7D3C401 /* LiteZipApp */,
+			);
+			path = Sources;
+			sourceTree = "<group>";
+		};
+		3614F012D417C19ACA5AAB8E /* Products */ = {
+			isa = PBXGroup;
+			children = (
+				204EB02AE8AD445B7B92A426 /* LiteZip.app */,
+				7F4D4074CB82632A41D3E9EF /* LiteZipFinder.appex */,
+			);
+			name = Products;
+			sourceTree = "<group>";
+		};
+		592117DCBD5202EA3B0D0432 /* Packages */ = {
+			isa = PBXGroup;
+			children = (
+				1CF775459AE87452E2015E65 /* LiteZIP */,
+			);
+			name = Packages;
+			sourceTree = "<group>";
+		};
+		62B73B58886F5CB7E7D3C401 /* LiteZipApp */ = {
+			isa = PBXGroup;
+			children = (
+				566B6612429758F32E497C05 /* AppModel.swift */,
+				3E943D630D176C0DF05FEE7E /* ArchiveBrowserView.swift */,
+				E8A76FA8A6E7C96A7EF35897 /* LiteZipApp.swift */,
+				5605A8D30DB1284F17157F79 /* MainView.swift */,
+				523966E6CBF0EBF55AAE61B6 /* SettingsView.swift */,
+			);
+			path = LiteZipApp;
+			sourceTree = "<group>";
+		};
+		7017CE778CB42CFBF602E353 = {
+			isa = PBXGroup;
+			children = (
+				F87B4E038680EDC3B73F0AD5 /* FinderExtension */,
+				592117DCBD5202EA3B0D0432 /* Packages */,
+				35245A62D2D86EA8CDC54225 /* Sources */,
+				06A2AA298603FAC03E501236 /* Frameworks */,
+				3614F012D417C19ACA5AAB8E /* Products */,
+			);
+			sourceTree = "<group>";
+		};
+		F87B4E038680EDC3B73F0AD5 /* FinderExtension */ = {
+			isa = PBXGroup;
+			children = (
+				0EC6913B7859ACFFAFC599A0 /* FinderSync.swift */,
+			);
+			path = FinderExtension;
+			sourceTree = "<group>";
+		};
+/* End PBXGroup section */
+
+/* Begin PBXNativeTarget section */
+		81A7AD8BB29D48315D888CF2 /* LiteZipFinder */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = E0A512B90E7590DCECCA0FE5 /* Build configuration list for PBXNativeTarget "LiteZipFinder" */;
+			buildPhases = (
+				30DAAC2BB446AB73E3353D0A /* Sources */,
+				B2718DE255BB746C2BA89FA6 /* Frameworks */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+			);
+			name = LiteZipFinder;
+			packageProductDependencies = (
+			);
+			productName = LiteZipFinder;
+			productReference = 7F4D4074CB82632A41D3E9EF /* LiteZipFinder.appex */;
+			productType = "com.apple.product-type.app-extension";
+		};
+		F03CC8148185050AA9F39E4A /* LiteZip */ = {
+			isa = PBXNativeTarget;
+			buildConfigurationList = 1AE4E501FFFBD8BE852ABFCE /* Build configuration list for PBXNativeTarget "LiteZip" */;
+			buildPhases = (
+				B005AA3A3EDDF21082BB1621 /* Sources */,
+				7889ABC7AD3516BD21BA4220 /* Frameworks */,
+				578878D1062C3CE23D1DFDDD /* Embed Foundation Extensions */,
+				837A51B903BC99E8F8B4BDE8 /* Bundle archive engine */,
+			);
+			buildRules = (
+			);
+			dependencies = (
+				2DB69D199A227B956DE2CF84 /* PBXTargetDependency */,
+			);
+			name = LiteZip;
+			packageProductDependencies = (
+				E8A7AA16996EDDBEC4BB83F5 /* LiteZipCore */,
+			);
+			productName = LiteZip;
+			productReference = 204EB02AE8AD445B7B92A426 /* LiteZip.app */;
+			productType = "com.apple.product-type.application";
+		};
+/* End PBXNativeTarget section */
+
+/* Begin PBXProject section */
+		20DD3175F2002FF5CDDB1F02 /* Project object */ = {
+			isa = PBXProject;
+			attributes = {
+				BuildIndependentTargetsInParallel = YES;
+				LastUpgradeCheck = 1430;
+				TargetAttributes = {
+					81A7AD8BB29D48315D888CF2 = {
+						ProvisioningStyle = Manual;
+					};
+					F03CC8148185050AA9F39E4A = {
+						ProvisioningStyle = Manual;
+					};
+				};
+			};
+			buildConfigurationList = 9CF37FD8BF7E58E1250F345B /* Build configuration list for PBXProject "LiteZip" */;
+			developmentRegion = en;
+			hasScannedForEncodings = 0;
+			knownRegions = (
+				Base,
+				en,
+			);
+			mainGroup = 7017CE778CB42CFBF602E353;
+			minimizedProjectReferenceProxies = 1;
+			packageReferences = (
+				B1704D9EA65C60EFA2990121 /* XCLocalSwiftPackageReference "." */,
+			);
+			preferredProjectObjectVersion = 77;
+			productRefGroup = 3614F012D417C19ACA5AAB8E /* Products */;
+			projectDirPath = "";
+			projectRoot = "";
+			targets = (
+				F03CC8148185050AA9F39E4A /* LiteZip */,
+				81A7AD8BB29D48315D888CF2 /* LiteZipFinder */,
+			);
+		};
+/* End PBXProject section */
+
+/* Begin PBXShellScriptBuildPhase section */
+		837A51B903BC99E8F8B4BDE8 /* Bundle archive engine */ = {
+			isa = PBXShellScriptBuildPhase;
+			alwaysOutOfDate = 1;
+			buildActionMask = 2147483647;
+			files = (
+			);
+			inputFileListPaths = (
+			);
+			inputPaths = (
+			);
+			name = "Bundle archive engine";
+			outputFileListPaths = (
+			);
+			outputPaths = (
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+			shellPath = /bin/sh;
+			shellScript = "set -eu\nmkdir -p \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine\"\ncp \"$SRCROOT/Vendor/7zip/7zz\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/7zz\"\ncp \"$SRCROOT/Vendor/zstd/zstd\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/zstd\"\nchmod 755 \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/7zz\" \"$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/zstd\"\n";
+		};
+/* End PBXShellScriptBuildPhase section */
+
+/* Begin PBXSourcesBuildPhase section */
+		30DAAC2BB446AB73E3353D0A /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				01443A0D924C18D6A4D0B83A /* FinderSync.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+		B005AA3A3EDDF21082BB1621 /* Sources */ = {
+			isa = PBXSourcesBuildPhase;
+			buildActionMask = 2147483647;
+			files = (
+				8A80261459B5F4F28BB00DEC /* AppModel.swift in Sources */,
+				BB74C5A17881CB1CF6D00A81 /* ArchiveBrowserView.swift in Sources */,
+				FC644EAD99535E74158FDBC1 /* LiteZipApp.swift in Sources */,
+				743F75D4B82075656CB8B5B5 /* MainView.swift in Sources */,
+				D205AF9048D386CE9E33BD05 /* SettingsView.swift in Sources */,
+			);
+			runOnlyForDeploymentPostprocessing = 0;
+		};
+/* End PBXSourcesBuildPhase section */
+
+/* Begin PBXTargetDependency section */
+		2DB69D199A227B956DE2CF84 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 81A7AD8BB29D48315D888CF2 /* LiteZipFinder */;
+			targetProxy = 47FA593D264C8AC2C8CD483E /* PBXContainerItemProxy */;
+		};
+/* End PBXTargetDependency section */
+
+/* Begin XCBuildConfiguration section */
+		5F707DA3CAB97215602CB4A9 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.litezip.LiteZip;
+				SDKROOT = macosx;
+			};
+			name = Release;
+		};
+		9A5CE38AB836068594C6851A /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "arm64 x86_64";
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_NS_ASSERTIONS = NO;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = NO;
+				MTL_FAST_MATH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_COMPILATION_MODE = wholemodule;
+				SWIFT_OPTIMIZATION_LEVEL = "-O";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Release;
+		};
+		B88D22E3EDD62F7BDF6935B8 /* Release */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FinderExtension/Finder.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = YES;
+				INFOPLIST_FILE = FinderExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.litezip.LiteZip.Finder;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Release;
+		};
+		C44EA0BBF9D45F515E090D2E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				CODE_SIGN_ENTITLEMENTS = FinderExtension/Finder.entitlements;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = YES;
+				INFOPLIST_FILE = FinderExtension/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+					"@executable_path/../../../../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.litezip.LiteZip.Finder;
+				SDKROOT = macosx;
+				SKIP_INSTALL = YES;
+				SWIFT_VERSION = 5.0;
+			};
+			name = Debug;
+		};
+		C58AD6978C87F34DF688B0E5 /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ASSETCATALOG_COMPILER_APPICON_NAME = AppIcon;
+				CODE_SIGN_IDENTITY = "-";
+				COMBINE_HIDPI_IMAGES = YES;
+				ENABLE_APP_SANDBOX = NO;
+				INFOPLIST_FILE = Resources/Info.plist;
+				LD_RUNPATH_SEARCH_PATHS = (
+					"$(inherited)",
+					"@executable_path/../Frameworks",
+				);
+				PRODUCT_BUNDLE_IDENTIFIER = app.litezip.LiteZip;
+				SDKROOT = macosx;
+			};
+			name = Debug;
+		};
+		DA7AEBF67BD5A9F2881A3E7E /* Debug */ = {
+			isa = XCBuildConfiguration;
+			buildSettings = {
+				ALWAYS_SEARCH_USER_PATHS = NO;
+				ARCHS = "arm64 x86_64";
+				CLANG_ANALYZER_NONNULL = YES;
+				CLANG_ANALYZER_NUMBER_OBJECT_CONVERSION = YES_AGGRESSIVE;
+				CLANG_CXX_LANGUAGE_STANDARD = "gnu++14";
+				CLANG_CXX_LIBRARY = "libc++";
+				CLANG_ENABLE_MODULES = YES;
+				CLANG_ENABLE_OBJC_ARC = YES;
+				CLANG_ENABLE_OBJC_WEAK = YES;
+				CLANG_WARN_BLOCK_CAPTURE_AUTORELEASING = YES;
+				CLANG_WARN_BOOL_CONVERSION = YES;
+				CLANG_WARN_COMMA = YES;
+				CLANG_WARN_CONSTANT_CONVERSION = YES;
+				CLANG_WARN_DEPRECATED_OBJC_IMPLEMENTATIONS = YES;
+				CLANG_WARN_DIRECT_OBJC_ISA_USAGE = YES_ERROR;
+				CLANG_WARN_DOCUMENTATION_COMMENTS = YES;
+				CLANG_WARN_EMPTY_BODY = YES;
+				CLANG_WARN_ENUM_CONVERSION = YES;
+				CLANG_WARN_INFINITE_RECURSION = YES;
+				CLANG_WARN_INT_CONVERSION = YES;
+				CLANG_WARN_NON_LITERAL_NULL_CONVERSION = YES;
+				CLANG_WARN_OBJC_IMPLICIT_RETAIN_SELF = YES;
+				CLANG_WARN_OBJC_LITERAL_CONVERSION = YES;
+				CLANG_WARN_OBJC_ROOT_CLASS = YES_ERROR;
+				CLANG_WARN_QUOTED_INCLUDE_IN_FRAMEWORK_HEADER = YES;
+				CLANG_WARN_RANGE_LOOP_ANALYSIS = YES;
+				CLANG_WARN_STRICT_PROTOTYPES = YES;
+				CLANG_WARN_SUSPICIOUS_MOVE = YES;
+				CLANG_WARN_UNGUARDED_AVAILABILITY = YES_AGGRESSIVE;
+				CLANG_WARN_UNREACHABLE_CODE = YES;
+				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
+				CODE_SIGN_STYLE = Manual;
+				COPY_PHASE_STRIP = NO;
+				CURRENT_PROJECT_VERSION = 1;
+				DEBUG_INFORMATION_FORMAT = dwarf;
+				ENABLE_HARDENED_RUNTIME = YES;
+				ENABLE_STRICT_OBJC_MSGSEND = YES;
+				ENABLE_TESTABILITY = YES;
+				GCC_C_LANGUAGE_STANDARD = gnu11;
+				GCC_DYNAMIC_NO_PIC = NO;
+				GCC_NO_COMMON_BLOCKS = YES;
+				GCC_OPTIMIZATION_LEVEL = 0;
+				GCC_PREPROCESSOR_DEFINITIONS = (
+					"$(inherited)",
+					"DEBUG=1",
+				);
+				GCC_WARN_64_TO_32_BIT_CONVERSION = YES;
+				GCC_WARN_ABOUT_RETURN_TYPE = YES_ERROR;
+				GCC_WARN_UNDECLARED_SELECTOR = YES;
+				GCC_WARN_UNINITIALIZED_AUTOS = YES_AGGRESSIVE;
+				GCC_WARN_UNUSED_FUNCTION = YES;
+				GCC_WARN_UNUSED_VARIABLE = YES;
+				MACOSX_DEPLOYMENT_TARGET = 13.0;
+				MARKETING_VERSION = 0.1.0;
+				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
+				MTL_FAST_MATH = YES;
+				ONLY_ACTIVE_ARCH = YES;
+				PRODUCT_NAME = "$(TARGET_NAME)";
+				SDKROOT = macosx;
+				SWIFT_ACTIVE_COMPILATION_CONDITIONS = DEBUG;
+				SWIFT_OPTIMIZATION_LEVEL = "-Onone";
+				SWIFT_VERSION = 6.0;
+			};
+			name = Debug;
+		};
+/* End XCBuildConfiguration section */
+
+/* Begin XCConfigurationList section */
+		1AE4E501FFFBD8BE852ABFCE /* Build configuration list for PBXNativeTarget "LiteZip" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C58AD6978C87F34DF688B0E5 /* Debug */,
+				5F707DA3CAB97215602CB4A9 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		9CF37FD8BF7E58E1250F345B /* Build configuration list for PBXProject "LiteZip" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				DA7AEBF67BD5A9F2881A3E7E /* Debug */,
+				9A5CE38AB836068594C6851A /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+		E0A512B90E7590DCECCA0FE5 /* Build configuration list for PBXNativeTarget "LiteZipFinder" */ = {
+			isa = XCConfigurationList;
+			buildConfigurations = (
+				C44EA0BBF9D45F515E090D2E /* Debug */,
+				B88D22E3EDD62F7BDF6935B8 /* Release */,
+			);
+			defaultConfigurationIsVisible = 0;
+			defaultConfigurationName = Debug;
+		};
+/* End XCConfigurationList section */
+
+/* Begin XCLocalSwiftPackageReference section */
+		B1704D9EA65C60EFA2990121 /* XCLocalSwiftPackageReference "." */ = {
+			isa = XCLocalSwiftPackageReference;
+			relativePath = .;
+		};
+/* End XCLocalSwiftPackageReference section */
+
+/* Begin XCSwiftPackageProductDependency section */
+		E8A7AA16996EDDBEC4BB83F5 /* LiteZipCore */ = {
+			isa = XCSwiftPackageProductDependency;
+			productName = LiteZipCore;
+		};
+/* End XCSwiftPackageProductDependency section */
+	};
+	rootObject = 20DD3175F2002FF5CDDB1F02 /* Project object */;
+}

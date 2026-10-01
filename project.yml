@@ -1,0 +1,124 @@
+name: LiteZip
+options:
+  deploymentTarget:
+    macOS: '13.0'
+  createIntermediateGroups: true
+settings:
+  base:
+    SWIFT_VERSION: '6.0'
+    MACOSX_DEPLOYMENT_TARGET: '13.0'
+    MARKETING_VERSION: '0.1.0'
+    CURRENT_PROJECT_VERSION: '1'
+    CODE_SIGN_STYLE: Manual
+    ENABLE_HARDENED_RUNTIME: YES
+    ARCHS: 'arm64 x86_64'
+packages:
+  LiteZipCore:
+    path: .
+targets:
+  LiteZip:
+    type: application
+    platform: macOS
+    sources:
+      - Sources/LiteZipApp
+    resources:
+      - path: Resources/AppIcon.icns
+      - path: Resources/ThirdPartyNotices.txt
+    info:
+      path: Resources/Info.plist
+      properties:
+        CFBundleDisplayName: LiteZip
+        CFBundleShortVersionString: '0.1.0'
+        CFBundleVersion: '1'
+        CFBundleIconFile: AppIcon
+        LSMinimumSystemVersion: '13.0'
+        NSHighResolutionCapable: true
+        NSHumanReadableCopyright: 'Copyright © 2026 LiteZip contributors'
+        CFBundleURLTypes:
+          - CFBundleURLName: app.litezip.commands
+            CFBundleURLSchemes: [litezip]
+        CFBundleDocumentTypes:
+          - CFBundleTypeName: Archives
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeExtensions: [zip, 7z, rar, tar, gz, tgz, bz2, xz, zst, zstd, tbz2, txz]
+            LSItemContentTypes: [public.zip-archive, org.7-zip.7-zip-archive, com.rarlab.rar-archive, public.tar-archive, org.gnu.gnu-zip-archive, public.bzip2-archive, org.tukaani.xz-archive, org.zstandard.zstd-archive]
+          - CFBundleTypeName: Files to Compress
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: None
+            LSItemContentTypes: [public.data, public.folder]
+        UTImportedTypeDeclarations:
+          - UTTypeIdentifier: org.7-zip.7-zip-archive
+            UTTypeDescription: 7-Zip Archive
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [7z]
+          - UTTypeIdentifier: com.rarlab.rar-archive
+            UTTypeDescription: RAR Archive
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [rar]
+          - UTTypeIdentifier: org.tukaani.xz-archive
+            UTTypeDescription: XZ Archive
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [xz, txz]
+          - UTTypeIdentifier: org.zstandard.zstd-archive
+            UTTypeDescription: Zstandard Archive
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [zst, zstd]
+    settings:
+      base:
+        PRODUCT_BUNDLE_IDENTIFIER: app.litezip.LiteZip
+        ENABLE_APP_SANDBOX: NO
+        CODE_SIGN_IDENTITY: '-'
+    dependencies:
+      - package: LiteZipCore
+        product: LiteZipCore
+      - target: LiteZipFinder
+        embed: true
+    postBuildScripts:
+      - name: Bundle archive engine
+        script: |
+          set -eu
+          mkdir -p "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine"
+          cp "$SRCROOT/Vendor/7zip/7zz" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/7zz"
+          cp "$SRCROOT/Vendor/zstd/zstd" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/zstd"
+          chmod 755 "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/7zz" "$TARGET_BUILD_DIR/$UNLOCALIZED_RESOURCES_FOLDER_PATH/Engine/zstd"
+        basedOnDependencyAnalysis: false
+  LiteZipFinder:
+    type: app-extension
+    platform: macOS
+    sources:
+      - path: FinderExtension
+        excludes: [Info.plist, Finder.entitlements]
+    info:
+      path: FinderExtension/Info.plist
+      properties:
+        CFBundleDisplayName: LiteZip Finder
+        CFBundleShortVersionString: '0.1.0'
+        CFBundleVersion: '1'
+        NSExtension:
+          NSExtensionAttributes: {}
+          NSExtensionPointIdentifier: com.apple.FinderSync
+          NSExtensionPrincipalClass: $(PRODUCT_MODULE_NAME).FinderSync
+    settings:
+      base:
+        SWIFT_VERSION: '5.0'
+        PRODUCT_BUNDLE_IDENTIFIER: app.litezip.LiteZip.Finder
+        CODE_SIGN_ENTITLEMENTS: FinderExtension/Finder.entitlements
+        ENABLE_APP_SANDBOX: YES
+        SKIP_INSTALL: YES
+        CODE_SIGN_IDENTITY: '-'
+    dependencies:
+      - sdk: FinderSync.framework
+schemes:
+  LiteZip:
+    build:
+      targets:
+        LiteZip: all
+    run:
+      config: Debug
+    archive:
+      config: Release

@@ -1,0 +1,23 @@
+name: macOS build and core tests
+on:
+  push:
+  pull_request:
+permissions:
+  contents: read
+jobs:
+  build:
+    runs-on: macos-15
+    steps:
+      - uses: actions/checkout@v4
+      - name: Core integration and security tests
+        run: swift test
+      - name: Install XcodeGen
+        run: brew install xcodegen
+      - name: Universal release build (unsigned)
+        run: Scripts/build.sh
+      - name: Package development build
+        run: ditto -c -k --sequesterRsrc --keepParent build/LiteZip.app build/LiteZip-unsigned.zip
+      - uses: actions/upload-artifact@v4
+        with:
+          name: LiteZip-macOS-universal-unsigned
+          path: build/LiteZip-unsigned.zip

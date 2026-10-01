@@ -1,0 +1,14 @@
+.DS_Store
+.build/
+build/
+dist/
+.swiftpm/
+*.xcuserstate
+xcuserdata/
+*.p12
+*.p8
+*.cer
+*.mobileprovision
+*.provisionprofile
+.env
+.env.*
