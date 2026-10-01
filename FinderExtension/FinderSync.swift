@@ -17,12 +17,17 @@ final class FinderSync: FIFinderSync {
         add("压缩设置…", action: #selector(configure), to: menu)
         if urls.allSatisfy({ isArchive($0) }) {
             menu.addItem(.separator())
-            add("解压到独立文件夹", action: #selector(extract), to: menu)
+            add(urls.allSatisfy { $0.pathExtension.lowercased() == "dmg" } ? "在 Finder 打开磁盘映像" : "解压到独立文件夹", action: #selector(extract), to: menu)
         }
         return menu
     }
     private func isArchive(_ url: URL) -> Bool {
-        if ["zip", "7z", "rar", "tar", "gz", "tgz", "bz2", "xz", "zst", "zstd", "tbz2", "txz"].contains(url.pathExtension.lowercased()) { return true }
+        if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { return false }
+        let ext = url.pathExtension.lowercased()
+        if ["zip", "zipx", "7z", "rar", "tar", "gz", "tgz", "bz2", "xz", "zst", "zstd", "tbz", "tbz2", "txz", "tzst", "dmg"].contains(ext) { return true }
+        if ext.count >= 3, let letter = ext.first, let ascii = letter.asciiValue,
+           (114...122).contains(ascii), ext.dropFirst().allSatisfy({ $0.isASCII && $0.isNumber }),
+           let index = Int(ext.dropFirst()), (letter == "z" ? index > 0 : ext.count == 3) { return true }
         let number = url.pathExtension
         return number.count >= 3 && number.allSatisfy({ $0.isASCII && $0.isNumber }) && (Int(number) ?? 0) > 0 && ["zip", "7z"].contains(url.deletingPathExtension().pathExtension.lowercased())
     }

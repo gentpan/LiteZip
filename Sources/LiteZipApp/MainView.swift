@@ -32,7 +32,7 @@ struct MainView: View {
                         compressionSettings
                         VStack(alignment: .leading, spacing: 11) {
                             Toggle("排除 Mac 资源文件", isOn: $model.excludeMacResources)
-                                .help("排除 .DS_Store、._ 开头的 AppleDouble 文件和 __MACOSX 文件夹。其他隐藏文件仍保留。")
+                                .help(model.format == .dmg ? "排除 .DS_Store、._ AppleDouble 和 __MACOSX。真实资源分叉与扩展属性仍保留；关闭后独立 AppleDouble 文件按系统磁盘映像复制规则处理。" : "排除 .DS_Store、._ 开头的 AppleDouble 文件和 __MACOSX 文件夹。其他隐藏文件仍保留。")
                             Toggle("压缩后验证完整性", isOn: $model.verifyArchive)
                                 .help("重新读取生成的压缩包，确认文件数据通过引擎校验。")
                             Toggle("分别压缩每个文件或文件夹", isOn: $model.separateArchives)
@@ -49,7 +49,7 @@ struct MainView: View {
                             Button("预览内容") { model.browserURL = model.files[0] }
                         }
                         Spacer()
-                        Button(model.mode == .compress ? (model.separateArchives ? "分别压缩…" : "压缩…") : "解压…", action: model.chooseDestination)
+                        Button(model.mode == .compress ? (model.separateArchives ? "分别压缩…" : model.format == .dmg ? "制作 DMG…" : "压缩…") : model.diskImagesOnly ? "在 Finder 打开" : "解压…", action: model.chooseDestination)
                             .buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: [.command])
                             .disabled(model.files.isEmpty || model.validationMessage != nil)
                     }
@@ -134,10 +134,13 @@ struct MainView: View {
             PasswordInput(label: "重复", placeholder: "再次输入密码", text: $model.passwordConfirmation, visible: $model.showPassword, showsVisibilityButton: false)
                 .disabled(!model.format.supportsPassword || model.password.isEmpty)
             if model.format.supportsPassword {
-                Label(model.format == .zip ? "AES-256 加密 · 密码使用 1–99 个 ASCII 字符" : "AES-256 加密 · 同时加密文件名" + (model.format == .rar ? " · 密码最长 127 字符" : ""), systemImage: "lock.fill")
+                Label(model.format == .dmg ? "AES-256 磁盘映像加密 · 支持中文密码" : model.format == .zip ? "AES-256 加密 · 密码使用 1–99 个 ASCII 字符" : "AES-256 加密 · 同时加密文件名" + (model.format == .rar ? " · 密码最长 127 字符" : ""), systemImage: "lock.fill")
                     .font(.caption).foregroundStyle(.secondary).fixedSize(horizontal: false, vertical: true)
             } else if model.format.singleFileOnly {
                 Text("每个压缩包包含一个普通文件；多个文件可分别压缩。").font(.caption).foregroundStyle(.secondary)
+            }
+            if model.format == .dmg {
+                Text("保留文件权限、扩展属性与符号链接；完成后可在 Finder 挂载。存储等级生成只读映像。").font(.caption).foregroundStyle(.secondary)
             }
             if !model.volumeSize.isEmpty && model.format.supportsVolumes {
                 Text(model.format == .rar ? "分卷保存到 .parts 文件夹，打开 .part1.rar 首卷（编号可能补零）。大小按 1 MB = 1024² 字节计算。" : "分卷保存到 .parts 文件夹。保留整组文件，打开 .001 解压。大小按 1 MB = 1024² 字节计算。")
@@ -147,9 +150,9 @@ struct MainView: View {
     }
     private var extractionSettings: some View {
         VStack(alignment: .leading, spacing: 16) {
-            Label("解压到独立文件夹", systemImage: "folder.badge.plus").font(.headline)
-            Text("同名结果自动编号。ZIP／7Z 和 .partN.rar 分卷会从第一卷读取整组内容。").font(.callout).foregroundStyle(.secondary)
-            PasswordInput(label: "密码", placeholder: "加密压缩包可在这里输入密码", text: $model.password, visible: $model.showPassword, showsVisibilityButton: true)
+            Label(model.diskImagesOnly ? "磁盘映像" : "解压到独立文件夹", systemImage: model.diskImagesOnly ? "externaldrive" : "folder.badge.plus").font(.headline)
+            Text(model.diskImagesOnly ? "可只读预览内容，或在 Finder 挂载以保留应用包与链接。加密映像挂载时由 macOS 询问密码。" : "同名结果自动编号。支持 .001、.z01、.partN.rar 和 .r00 分卷，请保留整组文件。").font(.callout).foregroundStyle(.secondary)
+            PasswordInput(label: "密码", placeholder: model.diskImagesOnly ? "预览加密 DMG 时使用" : "加密压缩包可在这里输入密码", text: $model.password, visible: $model.showPassword, showsVisibilityButton: true)
         }.padding(20).background(RoundedRectangle(cornerRadius: 14).fill(Color.primary.opacity(0.035)))
     }
     private var dropArea: some View {

@@ -99,14 +99,15 @@ final class AppModel: ObservableObject {
         let count = files.filter { ArchiveFormat.detect($0) != nil }.count
         return count > 0 && count < files.count
     }
+    var diskImagesOnly: Bool { !files.isEmpty && files.allSatisfy { ArchiveFormat.detect($0) == .dmg } }
     var validationMessage: String? {
         if mode == .extract {
             return files.contains { ArchiveFormat.detect($0) == nil } ? "解压模式仅支持压缩包，请移除普通文件或切换到压缩。" : nil
         }
         if format == .rar && preferences.rarURL == nil { return ArchiveError.rarEngineMissing.localizedDescription }
-        if format == .rar && !separateArchives {
+        if [.rar, .dmg].contains(format) && !separateArchives {
             let names = files.map { $0.lastPathComponent.precomposedStringWithCanonicalMapping.lowercased() }
-            if Set(names).count != names.count { return "RAR 中的顶层项目不能同名。请勾选分别压缩，或先修改其中一个名称。" }
+            if Set(names).count != names.count { return "\(format.title) 中的顶层项目不能同名。请勾选分别压缩，或先修改其中一个名称。" }
         }
         if format.supportsPassword && !password.isEmpty {
             if passwordConfirmation != password { return passwordConfirmation.isEmpty ? "请再次输入密码以确认。" : "两次输入的密码不一致。" }
@@ -185,9 +186,19 @@ final class AppModel: ObservableObject {
         guard !files.isEmpty else { return }
         if files.allSatisfy({ ArchiveFormat.detect($0) != nil }) {
             for file in files {
+                if ArchiveFormat.detect(file) == .dmg { openDiskImage(file); continue }
                 enqueue(files: [file], destination: file.deletingLastPathComponent().appendingPathComponent(ArchiveFormat.baseName(file)), extracting: true, options: .init())
             }
         } else { receive(files) }
+    }
+    func openDiskImage(_ url: URL) {
+        guard let application = NSWorkspace.shared.urlForApplication(withBundleIdentifier: "com.apple.DiskImageMounter") else {
+            errorMessage = "未找到 macOS 磁盘映像挂载工具。"; return
+        }
+        let configuration = NSWorkspace.OpenConfiguration()
+        NSWorkspace.shared.open([url], withApplicationAt: application, configuration: configuration) { _, error in
+            if let error { Task { @MainActor in self.errorMessage = error.localizedDescription } }
+        }
     }
     private func present(_ panel: NSSavePanel, preferredWindow: NSWindow? = nil, completion: @escaping (NSApplication.ModalResponse) -> Void) {
         guard activePanel == nil else { return }
@@ -251,10 +262,12 @@ final class AppModel: ObservableObject {
                 self.resetSelection()
             }
         } else {
-            let inputs = files, secret = password.isEmpty ? nil : password
+            for image in files where ArchiveFormat.detect(image) == .dmg { openDiskImage(image) }
+            let inputs = files.filter { ArchiveFormat.detect($0) != .dmg }, secret = password.isEmpty ? nil : password
+            guard !inputs.isEmpty else { resetSelection(); return }
             let panel = NSOpenPanel()
             panel.title = "选择解压位置"; panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = true
-            panel.prompt = "解压到此处"; panel.directoryURL = files[0].deletingLastPathComponent()
+            panel.prompt = "解压到此处"; panel.directoryURL = inputs[0].deletingLastPathComponent()
             present(panel) { [weak self] response in
                 guard let self, response == .OK, let directory = panel.url else { return }
                 for file in inputs {
@@ -319,7 +332,10 @@ final class AppModel: ObservableObject {
             let level = preferences.level == .store && !preferences.defaultFormat.supportsStore ? CompressionLevel.normal : preferences.level
             enqueue(files: files, destination: files[0].deletingLastPathComponent().appendingPathComponent(name), extracting: false, options: .init(format: preferences.defaultFormat, level: level))
         case "extract":
-            for file in files { enqueue(files: [file], destination: file.deletingLastPathComponent().appendingPathComponent(ArchiveFormat.baseName(file)), extracting: true, options: .init()) }
+            for file in files {
+                if ArchiveFormat.detect(file) == .dmg { openDiskImage(file) }
+                else { enqueue(files: [file], destination: file.deletingLastPathComponent().appendingPathComponent(ArchiveFormat.baseName(file)), extracting: true, options: .init()) }
+            }
         default: receive(files)
         }
     }

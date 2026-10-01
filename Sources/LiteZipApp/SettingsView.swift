@@ -42,7 +42,7 @@ struct SettingsView: View {
                 Text("在系统设置的扩展中启用 LiteZip Finder，即可使用右键压缩和解压。").font(.caption).foregroundStyle(.secondary)
             }
             Section("关于") {
-                Text("LiteZip 0.3.0 · 本地处理 · 无广告 · 无追踪")
+                Text("LiteZip 0.4.0 · 本地处理 · 无广告 · 无追踪")
                 Link("开源代码", destination: URL(string: "https://github.com/gentpan/LiteZip")!)
                 Text("内置 7-Zip 26.03（LGPL 与 unRAR 限制），详见应用包内 ThirdPartyNotices。").font(.caption).foregroundStyle(.secondary)
             }

@@ -10,20 +10,26 @@ public struct ArchiveService: ArchiveServiceProtocol {
         self.engineURL = engineURL; self.zstdURL = zstdURL ?? engineURL.deletingLastPathComponent().appendingPathComponent("zstd"); self.rarURL = rarURL; self.maximumExtractedBytes = maximumExtractedBytes
     }
     public func list(archive: URL, password: String? = nil, control: OperationControl = .init()) async throws -> [ArchiveEntry] {
-        try await background(control: control) { try withPreparedInput(archive, password: password, control: control) { _, entries in entries } }
+        try await background(control: control) {
+            if ArchiveFormat.detect(archive) == .dmg { return try diskImageEntries(archive, password: password, control: control) }
+            return try withPreparedInput(archive, password: password, control: control) { _, entries in entries }
+        }
     }
     private func listing(archive: URL, password: String?, control: OperationControl) throws -> [ArchiveEntry] {
         let archive = try validatedInput(archive)
         let data = try ProcessRunner(executable: engineURL).run(["l", "-slt", "-ba", "-bd", "-bse2", "-sccUTF-8", "--", archive.path], password: password, control: control)
         guard let text = String(data: data, encoding: .utf8) else { throw ArchiveError.ambiguousListing }
         let streamFormat = ArchiveFormat.detect(archive)
-        let fallback = [ArchiveFormat.gzip, .bzip2, .xz, .zstd, .tarGzip].contains(streamFormat) ? ArchiveFormat.baseName(archive) : nil
+        let fallback = streamFormat?.singleFileOnly == true || streamFormat?.tarCompression != nil ? ArchiveFormat.baseName(archive) : nil
         let entries = try ArchiveSafety.parseListing(text, fallbackPath: fallback)
         _ = try ArchiveSafety.validate(entries: entries, maximumBytes: maximumExtractedBytes)
         return entries
     }
     public func test(archive: URL, password: String? = nil, control: OperationControl = .init()) async throws {
         try await background(control: control) {
+            if ArchiveFormat.detect(archive) == .dmg {
+                try verifyDiskImage(archive, password: password, control: control); return
+            }
             try withPreparedInput(archive, password: password, control: control) { input, _ in
                 _ = try ProcessRunner(executable: engineURL).run(["t", "-bd", "-bso0", "-bse2", "--", input.path], password: password, control: control)
             }
@@ -32,6 +38,9 @@ public struct ArchiveService: ArchiveServiceProtocol {
     public func compress(files: [URL], destination: URL, options: CompressionOptions = .init(), control: OperationControl = .init(), progress: @escaping @Sendable (ArchiveProgress) -> Void = { _ in }) async throws -> URL {
         try await background(control: control) {
             guard !files.isEmpty, options.format.canCreate else { throw ArchiveError.unsupportedFormat }
+            if options.format == .dmg {
+                return try createDiskImage(files: files, destination: destination, options: options, control: control, progress: progress)
+            }
             if options.format == .rar {
                 guard let rarURL, FileManager.default.isExecutableFile(atPath: rarURL.path) else { throw ArchiveError.rarEngineMissing }
                 if let password = options.password, password.utf16.count > 127 { throw ArchiveError.rarPasswordLength }
@@ -58,7 +67,7 @@ public struct ArchiveService: ArchiveServiceProtocol {
             }
             if let size = options.volumeSizeBytes, total / size >= 10_000 { throw ArchiveError.tooLarge }
             let directory = destination.deletingLastPathComponent()
-            let copies: Int64 = options.format == .rar ? 2 : 1
+            let copies: Int64 = (options.format == .rar || options.format.tarCompression != nil) ? 2 : 1
             guard total <= (Int64.max - 16 * 1_024 * 1_024) / copies,
                   ArchiveSafety.availableBytes(at: directory) > total * copies + 16 * 1_024 * 1_024 else { throw ArchiveError.diskFull }
             let staging = try makeStaging(in: directory)
@@ -102,7 +111,7 @@ public struct ArchiveService: ArchiveServiceProtocol {
             if options.format == .rar {
                 let input = staging.appendingPathComponent("inputs", isDirectory: true)
                 progress(ArchiveProgress(totalBytes: total, currentFile: "准备 RAR 文件快照…"))
-                try prepareRARSources(canonicalFiles, at: input, excludeMacResources: options.excludeMacResources, control: control)
+                try prepareSourceSnapshot(canonicalFiles, at: input, excludeMacResources: options.excludeMacResources, control: control)
                 // Six UI levels map to RAR's six methods. Disable user configuration
                 // and sorting; limit dictionary memory and worker count explicitly.
                 let method = CompressionLevel.allCases.firstIndex(of: options.level)!
@@ -113,10 +122,14 @@ public struct ArchiveService: ArchiveServiceProtocol {
             } else if options.format == .zstd {
                 let zstd = zstdURL
                 _ = try ProcessRunner(executable: zstd).run(["-q", "-T2", "-\(options.level.rawValue)", "-o", partial.path, "--", canonicalFiles[0].path], control: control)
-            } else if options.format == .tarGzip {
+            } else if let compression = options.format.tarCompression {
                 let tar = staging.appendingPathComponent("payload.tar")
                 _ = try runner.run(["a", "-ttar", "-bsp1", "-bse2", "-spd"] + exclusions + ["--", tar.path] + paths, directory: workingDirectory, control: control, output: report)
-                _ = try runner.run(["a", "-tgzip", "-mx=\(options.level.rawValue)", "-bsp1", "-bse2", "--", partial.path, tar.path], control: control, output: report)
+                if compression == .zstd {
+                    _ = try ProcessRunner(executable: zstdURL).run(["-q", "-T2", "-\(options.level.rawValue)", "-o", partial.path, "--", tar.path], control: control)
+                } else {
+                    _ = try runner.run(["a", "-t" + compression.engineType, "-mx=\(options.level.rawValue)", "-mmt=2", "-bsp1", "-bse2", "--", partial.path, tar.path], control: control, output: report)
+                }
             } else {
                 _ = try runner.run(arguments + ["--", partial.path] + paths, directory: workingDirectory, password: options.password, control: control, output: report)
             }
@@ -142,6 +155,7 @@ public struct ArchiveService: ArchiveServiceProtocol {
     }
     public func extract(archive: URL, destination: URL, password: String? = nil, control: OperationControl = .init(), progress: @escaping @Sendable (ArchiveProgress) -> Void = { _ in }) async throws -> URL {
         try await background(control: control) {
+            guard ArchiveFormat.detect(archive) != .dmg else { throw ArchiveError.diskImageMountRequired }
             let fm = FileManager.default, directory = destination.deletingLastPathComponent()
             let staging = try makeStaging(in: directory)
             defer { StagingRegistry.remove(staging) }
@@ -178,8 +192,7 @@ public struct ArchiveService: ArchiveServiceProtocol {
         }
     }
     private func isCompressedTar(_ archive: URL) -> Bool {
-        let lower = archive.lastPathComponent.lowercased()
-        return [".tar.gz", ".tgz", ".tar.bz2", ".tbz2", ".tar.xz", ".txz", ".tar.zst"].contains(where: lower.hasSuffix)
+        ArchiveFormat.detect(archive)?.tarCompression != nil
     }
     private func prepareInput(_ archive: URL, staging: URL, password: String?, control: OperationControl) throws -> (URL, [ArchiveEntry]) {
         let input = try validatedInput(archive)
@@ -214,15 +227,18 @@ public struct ArchiveService: ArchiveServiceProtocol {
         }
         guard !entry.sizeKnown || written == entry.size else { throw ArchiveError.corruptedArchive }
     }
-    private func inspectSource(_ url: URL, excludeMacResources: Bool, control: OperationControl, total: inout Int64) throws {
+    func inspectSource(_ url: URL, excludeMacResources: Bool, allowLinks: Bool = false, control: OperationControl, total: inout Int64) throws {
         try control.check()
         if excludeMacResources && CompressionPlanning.isMacResource(url) { return }
         let values = try url.resourceValues(forKeys: [.isSymbolicLinkKey, .isRegularFileKey, .isDirectoryKey, .fileSizeKey])
-        guard values.isSymbolicLink != true else { throw ArchiveError.linksUnsupported }
+        if values.isSymbolicLink == true {
+            guard allowLinks else { throw ArchiveError.linksUnsupported }
+            return
+        }
         guard !url.lastPathComponent.contains("\n"), !url.lastPathComponent.contains("\r") else { throw ArchiveError.ambiguousListing }
         if values.isDirectory == true {
             for child in try ArchiveSafety.directoryContents(url) {
-                try inspectSource(child, excludeMacResources: excludeMacResources, control: control, total: &total)
+                try inspectSource(child, excludeMacResources: excludeMacResources, allowLinks: allowLinks, control: control, total: &total)
             }
         } else {
             guard values.isRegularFile == true else { throw ArchiveError.linksUnsupported }
@@ -246,6 +262,7 @@ public struct ArchiveService: ArchiveServiceProtocol {
                   FileManager.default.fileExists(atPath: part.firstURL.path) else { throw ArchiveError.missingVolume }
             return part.firstURL
         }
+        if let legacy = try validatedLegacyInput(archive) { return legacy }
         guard let first = ArchiveFormat.firstVolume(archive) else { return archive }
         let base = first.deletingPathExtension().lastPathComponent + "."
         let siblings = try FileManager.default.contentsOfDirectory(at: first.deletingLastPathComponent(), includingPropertiesForKeys: [.isSymbolicLinkKey, .isRegularFileKey])
@@ -261,14 +278,14 @@ public struct ArchiveService: ArchiveServiceProtocol {
         guard let last = indices.max(), indices.count == last, indices.contains(1) else { throw ArchiveError.missingVolume }
         return first
     }
-    private func makeStaging(in directory: URL) throws -> URL {
-        let result = directory.appendingPathComponent(".LiteZip-" + UUID().uuidString, isDirectory: true)
+    func makeStaging(in directory: URL) throws -> URL {
+        let result = directory.resolvingSymlinksInPath().appendingPathComponent(".LiteZip-" + UUID().uuidString, isDirectory: true)
         try FileManager.default.createDirectory(at: result, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
         do { try StagingRegistry.register(result) }
         catch { try? FileManager.default.removeItem(at: result); throw error }
         return result
     }
-    private func publish(_ source: URL, proposed: URL) throws -> URL {
+    func publish(_ source: URL, proposed: URL) throws -> URL {
         for index in 1...10_000 {
             let candidate: URL
             if index == 1 { candidate = proposed }

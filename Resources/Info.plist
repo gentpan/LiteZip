@@ -12,6 +12,7 @@
 			<key>CFBundleTypeExtensions</key>
 			<array>
 				<string>zip</string>
+				<string>zipx</string>
 				<string>7z</string>
 				<string>rar</string>
 				<string>tar</string>
@@ -21,9 +22,14 @@
 				<string>xz</string>
 				<string>zst</string>
 				<string>zstd</string>
+				<string>tbz</string>
 				<string>tbz2</string>
 				<string>txz</string>
+				<string>tzst</string>
+				<string>dmg</string>
 				<string>001</string>
+				<string>z01</string>
+				<string>r00</string>
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>Archives</string>
@@ -42,6 +48,10 @@
 				<string>org.tukaani.xz-archive</string>
 				<string>org.zstandard.zstd-archive</string>
 				<string>app.litezip.split-archive</string>
+				<string>com.apple.disk-image-udif</string>
+				<string>com.winzip.zipx-archive</string>
+				<string>app.litezip.legacy-volume</string>
+				<string>app.litezip.compressed-tar</string>
 			</array>
 		</dict>
 		<dict>
@@ -71,7 +81,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.3.0</string>
+	<string>0.4.0</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -84,7 +94,7 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>3</string>
+	<string>4</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
 	<key>NSHighResolutionCapable</key>
@@ -110,9 +120,82 @@
 				</array>
 			</dict>
 		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Legacy Archive Volume</string>
+			<key>UTTypeIdentifier</key>
+			<string>app.litezip.legacy-volume</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>z01</string>
+					<string>r00</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Compressed TAR Archive</string>
+			<key>UTTypeIdentifier</key>
+			<string>app.litezip.compressed-tar</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>tgz</string>
+					<string>tbz</string>
+					<string>tbz2</string>
+					<string>txz</string>
+					<string>tzst</string>
+				</array>
+			</dict>
+		</dict>
 	</array>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.disk-image</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Disk Image</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.apple.disk-image-udif</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>dmg</string>
+				</array>
+			</dict>
+		</dict>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Extended ZIP Archive</string>
+			<key>UTTypeIdentifier</key>
+			<string>com.winzip.zipx-archive</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>zipx</string>
+				</array>
+			</dict>
+		</dict>
 		<dict>
 			<key>UTTypeConformsTo</key>
 			<array>

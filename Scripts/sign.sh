@@ -9,5 +9,5 @@ codesign --force --options runtime --timestamp --entitlements FinderExtension/Fi
 codesign --force --options runtime --timestamp --sign "$LITEZIP_SIGN_IDENTITY" "$app"
 codesign --verify --deep --strict --verbose=2 "$app"
 mkdir -p dist
-ditto -c -k --sequesterRsrc --keepParent "$app" dist/LiteZip-0.3.0-macOS-universal.zip
-(cd dist && shasum -a 256 LiteZip-0.3.0-macOS-universal.zip) > dist/SHA256SUMS
+ditto -c -k --sequesterRsrc --keepParent "$app" dist/LiteZip-0.4.0-macOS-universal.zip
+(cd dist && shasum -a 256 LiteZip-0.4.0-macOS-universal.zip) > dist/SHA256SUMS

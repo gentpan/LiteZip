@@ -64,27 +64,31 @@ struct RARVolume {
 extension ArchiveService {
     /// RAR expands wildcards even in an argument list. Archive an isolated snapshot
     /// using a constant "." operand, so source names are always treated literally.
-    func prepareRARSources(_ files: [URL], at root: URL, excludeMacResources: Bool, control: OperationControl) throws {
+    func prepareSourceSnapshot(_ files: [URL], at root: URL, excludeMacResources: Bool, preserveMetadata: Bool = false, allowLinks: Bool = false, control: OperationControl) throws {
         try FileManager.default.createDirectory(at: root, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
         var names = Set<String>()
         for source in files {
             let name = source.lastPathComponent
             try ArchiveSafety.validate(path: name)
             guard names.insert(name.precomposedStringWithCanonicalMapping.lowercased()).inserted else { throw ArchiveError.unsafePath }
-            try snapshot(source, to: root.appendingPathComponent(name), excludeMacResources: excludeMacResources, control: control)
+            try snapshot(source, to: root.appendingPathComponent(name), excludeMacResources: excludeMacResources, preserveMetadata: preserveMetadata, allowLinks: allowLinks, control: control)
         }
     }
-    private func snapshot(_ source: URL, to target: URL, excludeMacResources: Bool, control: OperationControl) throws {
+    private func snapshot(_ source: URL, to target: URL, excludeMacResources: Bool, preserveMetadata: Bool, allowLinks: Bool, control: OperationControl) throws {
         try control.check()
         if excludeMacResources && CompressionPlanning.isMacResource(source) { return }
         try ArchiveSafety.validate(path: source.lastPathComponent)
         let fm = FileManager.default
         let values = try source.resourceValues(forKeys: [.isSymbolicLinkKey, .isDirectoryKey, .isRegularFileKey, .contentModificationDateKey])
-        guard values.isSymbolicLink != true else { throw ArchiveError.linksUnsupported }
-        if values.isDirectory == true {
+        if values.isSymbolicLink == true {
+            guard allowLinks else { throw ArchiveError.linksUnsupported }
+            // Preserve the link text without resolving or reading its target.
+            try fm.createSymbolicLink(atPath: target.path, withDestinationPath: fm.destinationOfSymbolicLink(atPath: source.path))
+            return
+        } else if values.isDirectory == true {
             try fm.createDirectory(at: target, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o755])
             for child in try ArchiveSafety.directoryContents(source) {
-                try snapshot(child, to: target.appendingPathComponent(child.lastPathComponent), excludeMacResources: excludeMacResources, control: control)
+                try snapshot(child, to: target.appendingPathComponent(child.lastPathComponent), excludeMacResources: excludeMacResources, preserveMetadata: preserveMetadata, allowLinks: allowLinks, control: control)
             }
         } else {
             guard values.isRegularFile == true else { throw ArchiveError.linksUnsupported }
@@ -107,8 +111,12 @@ extension ArchiveService {
             }
             let copied = try target.resourceValues(forKeys: [.isSymbolicLinkKey, .isRegularFileKey])
             guard copied.isSymbolicLink != true, copied.isRegularFile == true else { throw ArchiveError.linksUnsupported }
-            try fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: target.path)
+            if !preserveMetadata { try fm.setAttributes([.posixPermissions: 0o600], ofItemAtPath: target.path) }
             if let date = values.contentModificationDate { try fm.setAttributes([.modificationDate: date], ofItemAtPath: target.path) }
+        }
+        if preserveMetadata {
+            let flags = copyfile_flags_t(COPYFILE_METADATA | COPYFILE_NOFOLLOW_SRC | COPYFILE_NOFOLLOW_DST)
+            guard copyfile(source.path, target.path, nil, flags) == 0 else { throw ArchiveError.permissionDenied }
         }
         try control.check()
     }

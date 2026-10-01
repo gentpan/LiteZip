@@ -1,8 +1,8 @@
-# 0.3.0 验证记录
+# 0.4.0 验证记录
 
 ## 自动测试
 
-`LITEZIP_RAR_TEST_ENGINE='/absolute/path/to/rar' LITEZIP_LARGE_TESTS=1 swift test`：29 组测试全部通过，包括参数化格式与安全案例。本机使用 RARLAB 官方 macOS ARM 7.23 完整软件包进行编码测试；该引擎不进入仓库或发布产物。
+`LITEZIP_RAR_TEST_ENGINE='/absolute/path/to/rar' LITEZIP_LARGE_TESTS=1 swift test`：36 组测试全部通过，包括参数化格式与安全案例。本机使用 RARLAB 官方 macOS ARM 7.23 完整软件包进行编码测试；该引擎不进入仓库或发布产物。
 
 未指定 RAR 测试引擎时跳过五组编码集成测试，其余测试照常运行。CI 不下载专有编码器。
 
@@ -28,6 +28,19 @@
 
 应用和核心使用 Swift 6 编译；Release 配置无应用源码编译警告。Xcode 对无 AppIntents 依赖的目标产生元数据跳过提示，未使用此框架。
 
+## 0.4.0 新增格式验证
+
+- TAR.BZ2、TAR.XZ、TAR.ZST 与原有格式一起进行中文、空文件、嵌套目录和资源排除开／关的往返与校验；TGZ、TBZ、TBZ2、TXZ、TZST、TAR.ZSTD 别名返回内层路径。
+- 四种压缩 TAR 的预览和校验均拒绝内部符号链接、硬链接与 FIFO。
+- ZIPX 的实际 LZMA、BZIP2 样本包含中文／Emoji、空文件和目录；预览、校验及解压通过。不支持的 method 255 拒绝且不发布结果。
+- 系统 Info-ZIP 创建的真实 .z01/.z02/.zip 三卷往返，从任意卷归一到 .zip，缺卷与链接拒绝。
+- libarchive RAR4 三卷样本仅更改旧式命名标志与头部 CRC，压缩数据不改动；以 .rar/.r00/.r01 解压、校验，从后续卷归一，以及缺卷／链接拒绝。
+- hdiutil 真实制作 UDRO 存储与 AES-256 加密 UDZO 映像；中文／Emoji 密码、缺失与错误密码、预览、校验、重名自动编号通过。
+- DMG 中 .app 可执行文件的 0755 权限、普通扩展属性和 com.apple.ResourceFork 逐字节检查通过；外部 /Applications 符号链接原文保留，预览不跟随目标。
+- DMG .DS_Store 排除开／关验证通过。独立 AppleDouble 由系统复制规则处理，不保证作为独立文件保留。
+- DMG 重复顶层项目、非法密码、分卷选项与预先取消拒绝；正常和错误密码预览后检查无 LiteZip 遗留挂载。
+- 私有挂载点和临时路径通过 realpath 对齐 /var 与 /private/var；清理前枚举挂载点，卸载失败时不删除挂载内容。
+
 ## 构建与签名
 
 - App、Finder 扩展、7zz、zstd 均为 arm64 + x86_64 universal Mach-O。
@@ -36,6 +49,15 @@
 - 证书只从本机 Keychain 调用，仓库不包含证书、私钥或公证凭据。
 - **未公证**：`spctl` 返回 `Unnotarized Developer ID`。尚未满足正式发布 Gatekeeper 门禁。
 - Finder 扩展的 `NSExtensionPointIdentifier` 和应用版本由构建脚本校验，扩展可由 `pluginkit` 注册。
+
+## 0.4.0 原生界面实测
+
+- 创建菜单显示新增 TAR.BZ2、TAR.XZ、TAR.ZST 和 DMG；ZIPX 仅用于读取。
+- DMG 设置显示存储等级、AES-256 说明，禁用分卷，密码确认未填时阻止提交。
+- 已签名 App 在标准保存 sheet 中真实生成加密 DMG；验证完成后显示任务成功，密码与确认字段清空。
+- 主窗口的预览密码自动传入浏览器，真实显示加密 DMG 的四个项目并校验成功；读取完成后私有挂载已卸载。
+- 文件打开事件实际交给系统 DiskImageMounter，映像挂载到 /Volumes/LiteZip，文件内容检查通过；测试后卸载。LiteZip Finder 0.4.0 已注册并处于启用状态。
+- DMG 选中后显示“在 Finder 打开”，并说明只读预览和系统密码提示；普通归档继续显示独立文件夹解压。
 
 ## 0.3.0 原生界面实测
 

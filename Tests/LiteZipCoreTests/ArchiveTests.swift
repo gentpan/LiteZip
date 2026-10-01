@@ -26,7 +26,7 @@ private struct Fixture {
 
 @Suite("Archive integration")
 struct ArchiveTests {
-    @Test("Mac resource exclusions keep ordinary hidden and literal files", arguments: [ArchiveFormat.zip, .sevenZip, .tar, .tarGzip])
+    @Test("Mac resource exclusions keep ordinary hidden and literal files", arguments: [ArchiveFormat.zip, .sevenZip, .tar, .tarGzip, .tarBzip2, .tarXZ, .tarZstd])
     func macResources(format: ArchiveFormat) async throws {
         let f = try Fixture(); defer { f.close() }
         for name in ["folder/.DS_Store", "folder/deep/.DS_Store", "folder/deep/._photo.jpg", "folder/__MACOSX/meta", "folder/.hidden", "folder/wild*.txt", "folder/deep/photo.jpg"] { _ = try f.makeFile(name) }
@@ -45,11 +45,16 @@ struct ArchiveTests {
         }
         try f.assertClean()
     }
-    @Test("Compressed TAR preview and test reject unsafe inner entries", arguments: ["symlink.tar", "hardlink.tar", "fifo.tar"])
-    func compressedTarSafety(name: String) async throws {
+    @Test("Compressed TAR preview and test reject unsafe inner entries", arguments: ["symlink.tar", "hardlink.tar", "fifo.tar"], [ArchiveFormat.tarGzip, .tarBzip2, .tarXZ, .tarZstd])
+    func compressedTarSafety(name: String, format: ArchiveFormat) async throws {
         let f = try Fixture(); defer { f.close() }
-        let archive = f.root.appendingPathComponent("unsafe.tar.gz")
-        _ = try ProcessRunner(executable: f.service.engineURL).run(["a", "-tgzip", "-bso0", "--", archive.path, f.input(name).path], control: .init())
+        let archive = f.root.appendingPathComponent("unsafe." + format.suffix)
+        let compression = format.tarCompression!
+        if compression == .zstd {
+            _ = try ProcessRunner(executable: f.service.zstdURL).run(["-q", "-o", archive.path, "--", f.input(name).path], control: .init())
+        } else {
+            _ = try ProcessRunner(executable: f.service.engineURL).run(["a", "-t" + compression.engineType, "-bso0", "--", archive.path, f.input(name).path], control: .init())
+        }
         await #expect(throws: ArchiveError.linksUnsupported) { _ = try await f.service.list(archive: archive) }
         await #expect(throws: ArchiveError.linksUnsupported) { try await f.service.test(archive: archive) }
         try f.assertClean()
@@ -113,7 +118,7 @@ struct ArchiveTests {
             #expect(!entries.contains { $0.path == (plan.files[0] == first ? second : first).lastPathComponent })
         }
     }
-    @Test("Unicode and zero-byte round trip", arguments: [ArchiveFormat.zip, .sevenZip, .tar, .tarGzip, .gzip, .bzip2, .xz, .zstd])
+    @Test("Unicode and zero-byte round trip", arguments: [ArchiveFormat.zip, .sevenZip, .tar, .tarGzip, .tarBzip2, .tarXZ, .tarZstd, .gzip, .bzip2, .xz, .zstd])
     func roundTrip(format: ArchiveFormat) async throws {
         let f = try Fixture(); defer { f.close() }
         let source = try f.makeFile()
@@ -125,7 +130,7 @@ struct ArchiveTests {
         #expect(try Data(contentsOf: outputFiles[0]) == Data(contentsOf: source))
         try f.assertClean()
     }
-    @Test("Nested folders, hidden files and empty files", arguments: [ArchiveFormat.zip, .sevenZip, .tar, .tarGzip])
+    @Test("Nested folders, hidden files and empty files", arguments: [ArchiveFormat.zip, .sevenZip, .tar, .tarGzip, .tarBzip2, .tarXZ, .tarZstd])
     func directories(format: ArchiveFormat) async throws {
         let f = try Fixture(); defer { f.close() }
         let source = try f.makeFile("folder/deep/中文 😀.txt")

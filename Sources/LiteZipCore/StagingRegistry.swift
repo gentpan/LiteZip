@@ -18,6 +18,7 @@ enum StagingRegistry {
     }
     static func remove(_ url: URL) {
         do {
+            guard PrivateDiskImageMount.detach(inside: url) else { return }
             if FileManager.default.fileExists(atPath: url.path) { try FileManager.default.removeItem(at: url) }
             try? FileManager.default.removeItem(at: manifest(for: url))
         } catch { /* Leave the journal for a later cleanup attempt. */ }

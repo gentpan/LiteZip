@@ -1,28 +1,36 @@
 import Foundation
 
 public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable {
-    case zip, sevenZip, tar, tarGzip, gzip, bzip2, xz, zstd, rar
+    case zip, sevenZip, rar, tar, tarGzip, tarBzip2, tarXZ, tarZstd, gzip, bzip2, xz, zstd, dmg, zipx
     public var id: String { rawValue }
     public var title: String {
         switch self {
         case .sevenZip: "7Z"
         case .tarGzip: "TAR.GZ"
+        case .tarBzip2: "TAR.BZ2"
+        case .tarXZ: "TAR.XZ"
+        case .tarZstd: "TAR.ZST"
         default: rawValue.uppercased()
         }
     }
     public var suffix: String {
-        switch self { case .sevenZip: "7z"; case .tarGzip: "tar.gz"; case .gzip: "gz"; case .bzip2: "bz2"; case .zstd: "zst"; default: rawValue }
+        switch self { case .sevenZip: "7z"; case .tarGzip: "tar.gz"; case .tarBzip2: "tar.bz2"; case .tarXZ: "tar.xz"; case .tarZstd: "tar.zst"; case .gzip: "gz"; case .bzip2: "bz2"; case .zstd: "zst"; default: rawValue }
     }
     public var engineType: String { self == .sevenZip ? "7z" : rawValue }
     /// RAR creation additionally requires a separately installed official engine.
-    public var canCreate: Bool { true }
-    public var supportsPassword: Bool { [.zip, .sevenZip, .rar].contains(self) }
+    public var canCreate: Bool { self != .zipx }
+    public var supportsPassword: Bool { [.zip, .sevenZip, .rar, .dmg].contains(self) }
     public var singleFileOnly: Bool { [.gzip, .bzip2, .xz, .zstd].contains(self) }
     public var supportsVolumes: Bool { [.zip, .sevenZip, .rar].contains(self) }
-    public var supportsStore: Bool { [.zip, .sevenZip, .rar].contains(self) }
+    public var supportsStore: Bool { [.zip, .sevenZip, .rar, .dmg].contains(self) }
+    public var tarCompression: ArchiveFormat? {
+        switch self { case .tarGzip: .gzip; case .tarBzip2: .bzip2; case .tarXZ: .xz; case .tarZstd: .zstd; default: nil }
+    }
     /// ZIP/7Z use .001; modern RAR uses .part1.rar (possibly zero padded).
     public static func firstVolume(_ url: URL) -> URL? {
+        if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { return nil }
         if let part = RARVolume(url) { return part.firstURL }
+        if let part = LegacyVolume(url) { return part.firstURL }
         let number = url.pathExtension
         let base = url.deletingPathExtension()
         guard number.count >= 3, number.allSatisfy({ $0.isASCII && $0.isNumber }),
@@ -33,11 +41,17 @@ public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable
     public static func detect(_ url: URL) -> ArchiveFormat? {
         if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { return nil }
         if RARVolume(url) != nil { return .rar }
+        if let part = LegacyVolume(url) { return part.format }
         if firstVolume(url) != nil { return detect(url.deletingPathExtension()) }
         let name = url.lastPathComponent.lowercased()
-        if name.hasSuffix(".tar.gz") || name.hasSuffix(".tgz") { return .tarGzip }
+        for format in [ArchiveFormat.tarGzip, .tarBzip2, .tarXZ, .tarZstd] {
+            if name.hasSuffix("." + format.suffix) { return format }
+        }
+        let aliases: [String: ArchiveFormat] = ["tgz": .tarGzip, "tbz": .tarBzip2, "tbz2": .tarBzip2, "txz": .tarXZ, "tzst": .tarZstd]
         let ext = url.pathExtension.lowercased()
-        let extensions: [String: ArchiveFormat] = ["zip": .zip, "7z": .sevenZip, "rar": .rar, "tar": .tar, "gz": .gzip, "bz2": .bzip2, "xz": .xz, "zst": .zstd, "zstd": .zstd]
+        if let format = aliases[ext] { return format }
+        if name.hasSuffix(".tar.zstd") { return .tarZstd }
+        let extensions: [String: ArchiveFormat] = ["zip": .zip, "zipx": .zipx, "7z": .sevenZip, "rar": .rar, "tar": .tar, "gz": .gzip, "bz2": .bzip2, "xz": .xz, "zst": .zstd, "zstd": .zstd, "dmg": .dmg]
         if let format = extensions[ext] { return format }
         guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
         defer { try? handle.close() }
@@ -54,9 +68,10 @@ public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable
     }
     public static func baseName(_ url: URL) -> String {
         if let part = RARVolume(url) { return part.stem }
+        if let part = LegacyVolume(url) { return part.stem }
         if firstVolume(url) != nil { return baseName(url.deletingPathExtension()) }
         let name = url.lastPathComponent
-        for suffix in [".tar.gz", ".tar.bz2", ".tar.xz", ".tar.zst", ".tgz", ".tbz2", ".txz"] {
+        for suffix in [".tar.gz", ".tar.bz2", ".tar.xz", ".tar.zstd", ".tar.zst", ".tgz", ".tbz2", ".tbz", ".txz", ".tzst"] {
             if name.lowercased().hasSuffix(suffix) { return String(name.dropLast(suffix.count)) }
         }
         return url.deletingPathExtension().lastPathComponent
@@ -93,8 +108,9 @@ public struct ArchiveEntry: Sendable, Identifiable, Equatable {
     public let sizeKnown: Bool
     public let isDirectory: Bool
     public let encrypted: Bool
-    public init(path: String, sourcePath: String? = nil, size: Int64, sizeKnown: Bool = true, isDirectory: Bool = false, encrypted: Bool = false) {
-        self.path = path; self.sourcePath = sourcePath ?? path; self.size = size; self.sizeKnown = sizeKnown; self.isDirectory = isDirectory; self.encrypted = encrypted
+    public let isSymbolicLink: Bool
+    public init(path: String, sourcePath: String? = nil, size: Int64, sizeKnown: Bool = true, isDirectory: Bool = false, encrypted: Bool = false, isSymbolicLink: Bool = false) {
+        self.path = path; self.sourcePath = sourcePath ?? path; self.size = size; self.sizeKnown = sizeKnown; self.isDirectory = isDirectory; self.encrypted = encrypted; self.isSymbolicLink = isSymbolicLink
     }
 }
 
@@ -116,6 +132,7 @@ public enum ArchiveError: Error, LocalizedError, Sendable, Equatable {
     case invalidArchive, corruptedArchive, wrongPassword, unsupportedFormat, missingVolume, diskFull, permissionDenied, cancelled
     case unsafePath, linksUnsupported, tooLarge, ambiguousListing, invalidInput, engineMissing, zipPasswordEncoding, invalidVolumeSize
     case rarEngineMissing, invalidRAREngine, rarPasswordLength
+    case diskImageMountRequired
     public var errorDescription: String? {
         switch self {
         case .invalidArchive: "这个文件不是有效的压缩包，或文件头已损坏。"
@@ -137,6 +154,7 @@ public enum ArchiveError: Error, LocalizedError, Sendable, Equatable {
         case .rarEngineMissing: "创建 RAR 需要官方 RAR 引擎，请先在设置中连接本机的 rar 可执行文件。RAR 解压无需额外安装。"
         case .invalidRAREngine: "请选择 RARLAB 官方 macOS 软件包中的 rar 可执行文件（RAR 7 或更新版本）。"
         case .rarPasswordLength: "RAR 密码最多 127 个字符，部分 Emoji 占两个字符。请缩短密码后重试。"
+        case .diskImageMountRequired: "DMG 请使用“在 Finder 打开”挂载，保留应用包的链接、权限和资源。"
         }
     }
 }

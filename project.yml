@@ -7,8 +7,8 @@ settings:
   base:
     SWIFT_VERSION: '6.0'
     MACOSX_DEPLOYMENT_TARGET: '13.0'
-    MARKETING_VERSION: '0.3.0'
-    CURRENT_PROJECT_VERSION: '3'
+    MARKETING_VERSION: '0.4.0'
+    CURRENT_PROJECT_VERSION: '4'
     CODE_SIGN_STYLE: Manual
     ENABLE_HARDENED_RUNTIME: YES
     ARCHS: 'arm64 x86_64'
@@ -28,8 +28,8 @@ targets:
       path: Resources/Info.plist
       properties:
         CFBundleDisplayName: LiteZip
-        CFBundleShortVersionString: '0.3.0'
-        CFBundleVersion: '3'
+        CFBundleShortVersionString: '0.4.0'
+        CFBundleVersion: '4'
         CFBundleIconFile: AppIcon
         LSMinimumSystemVersion: '13.0'
         NSHighResolutionCapable: true
@@ -41,8 +41,8 @@ targets:
           - CFBundleTypeName: Archives
             CFBundleTypeRole: Viewer
             LSHandlerRank: Alternate
-            CFBundleTypeExtensions: [zip, 7z, rar, tar, gz, tgz, bz2, xz, zst, zstd, tbz2, txz, '001']
-            LSItemContentTypes: [public.zip-archive, org.7-zip.7-zip-archive, com.rarlab.rar-archive, public.tar-archive, org.gnu.gnu-zip-archive, public.bzip2-archive, org.tukaani.xz-archive, org.zstandard.zstd-archive, app.litezip.split-archive]
+            CFBundleTypeExtensions: [zip, zipx, 7z, rar, tar, gz, tgz, bz2, xz, zst, zstd, tbz, tbz2, txz, tzst, dmg, '001', z01, r00]
+            LSItemContentTypes: [public.zip-archive, org.7-zip.7-zip-archive, com.rarlab.rar-archive, public.tar-archive, org.gnu.gnu-zip-archive, public.bzip2-archive, org.tukaani.xz-archive, org.zstandard.zstd-archive, app.litezip.split-archive, com.apple.disk-image-udif, com.winzip.zipx-archive, app.litezip.legacy-volume, app.litezip.compressed-tar]
           - CFBundleTypeName: Files to Compress
             CFBundleTypeRole: Viewer
             LSHandlerRank: None
@@ -53,7 +53,27 @@ targets:
             UTTypeConformsTo: [public.archive]
             UTTypeTagSpecification:
               public.filename-extension: ['001']
+          - UTTypeIdentifier: app.litezip.legacy-volume
+            UTTypeDescription: Legacy Archive Volume
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [z01, r00]
+          - UTTypeIdentifier: app.litezip.compressed-tar
+            UTTypeDescription: Compressed TAR Archive
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [tgz, tbz, tbz2, txz, tzst]
         UTImportedTypeDeclarations:
+          - UTTypeIdentifier: com.apple.disk-image-udif
+            UTTypeDescription: Disk Image
+            UTTypeConformsTo: [public.disk-image]
+            UTTypeTagSpecification:
+              public.filename-extension: [dmg]
+          - UTTypeIdentifier: com.winzip.zipx-archive
+            UTTypeDescription: Extended ZIP Archive
+            UTTypeConformsTo: [public.archive]
+            UTTypeTagSpecification:
+              public.filename-extension: [zipx]
           - UTTypeIdentifier: org.7-zip.7-zip-archive
             UTTypeDescription: 7-Zip Archive
             UTTypeConformsTo: [public.archive]
@@ -103,8 +123,8 @@ targets:
       path: FinderExtension/Info.plist
       properties:
         CFBundleDisplayName: LiteZip Finder
-        CFBundleShortVersionString: '0.3.0'
-        CFBundleVersion: '3'
+        CFBundleShortVersionString: '0.4.0'
+        CFBundleVersion: '4'
         NSExtension:
           NSExtensionAttributes: {}
           NSExtensionPointIdentifier: com.apple.FinderSync

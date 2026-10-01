@@ -40,10 +40,11 @@ private final class ErrorBuffer: @unchecked Sendable {
 
 struct ProcessRunner: Sendable {
     let executable: URL
-    func run(_ arguments: [String], directory: URL? = nil, password: String? = nil,
+    func run(_ arguments: [String], directory: URL? = nil, password: String? = nil, standardInput: Data? = nil,
              control: OperationControl, limit: Int = 32 * 1_024 * 1_024,
              output: ((Data) throws -> Void)? = nil) throws -> Data {
         try control.check()
+        guard password == nil || standardInput == nil else { throw ArchiveError.invalidInput }
         guard FileManager.default.isExecutableFile(atPath: executable.path) else { throw ArchiveError.engineMissing }
         if let password, password.utf8.count > 4096 || password.contains("\n") || password.contains("\r") || password.contains("\0") { throw ArchiveError.invalidInput }
         let process = Process()
@@ -65,8 +66,8 @@ struct ProcessRunner: Sendable {
         }
         do {
             _ = fcntl(stdin.fileHandleForWriting.fileDescriptor, F_SETNOSIGPIPE, 1)
-            if let password {
-                do { try stdin.fileHandleForWriting.write(contentsOf: Data((password + "\n" + password + "\n").utf8)) }
+            if let input = standardInput ?? password.map({ Data(($0 + "\n" + $0 + "\n").utf8) }) {
+                do { try stdin.fileHandleForWriting.write(contentsOf: input) }
                 catch {
                     let ns = error as NSError
                     let underlying = ns.userInfo[NSUnderlyingErrorKey] as? NSError
@@ -112,11 +113,11 @@ struct ProcessRunner: Sendable {
     }
     static func mapError(_ detail: String) -> ArchiveError {
         let text = detail.lowercased()
-        if text.contains("password") || text.contains("encrypted") { return .wrongPassword }
+        if text.contains("password") || text.contains("encrypted") || text.contains("authentication error") || text.contains("认证错误") || text.contains("認證錯誤") { return .wrongPassword }
         if text.contains("no space") { return .diskFull }
         if text.contains("permission") || text.contains("access is denied") { return .permissionDenied }
         if text.contains("volume") { return .missingVolume }
-        if text.contains("crc") || text.contains("data error") || text.contains("unexpected end") { return .corruptedArchive }
+        if text.contains("crc") || text.contains("checksum") || text.contains("data error") || text.contains("unexpected end") { return .corruptedArchive }
         if text.contains("unsupported") { return .unsupportedFormat }
         return .invalidArchive
     }

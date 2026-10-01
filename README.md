@@ -2,7 +2,7 @@
 
 轻量、原生、免费开源的 macOS 压缩与解压工具。SwiftUI 界面，文件完全在本机处理，无账号、广告或遥测。
 
-**0.3.0 开发预览版 · macOS 13+ · Apple Silicon / Intel 通用构建**
+**0.4.0 开发预览版 · macOS 13+ · Apple Silicon / Intel 通用构建**
 
 ![LiteZip](docs/screenshots/light.png)
 
@@ -10,10 +10,12 @@
 
 ## 已实现
 
-- ZIP / 7Z / TAR / TAR.GZ 压缩与解压；GZIP / BZIP2 / XZ / ZSTD 单文件压缩与解压。
+- ZIP / 7Z / TAR / TAR.GZ / TAR.BZ2 / TAR.XZ / TAR.ZST 压缩与解压；GZIP / BZIP2 / XZ / ZSTD 单文件压缩与解压。
+- ZIPX 解压、预览与校验（已验证 LZMA、BZIP2；其他方法取决于内置引擎）。
+- DMG 制作、AES-256 加密、只读预览、完整性校验与 Finder 挂载；保留权限、扩展属性和符号链接。
 - RAR / RAR5 解压已内置；连接本机官方 RAR 引擎后支持 RAR 创建、加密与分卷。
 - ZIP AES-256 加密、7Z AES 加密及文件名加密；密码仅在内存中使用，通过引擎标准输入传递。
-- 紧凑设置面板、标题栏格式选择、带刻度的压缩等级，ZIP／7Z／RAR 可选择仅存储。
+- 紧凑设置面板、标题栏格式选择、带刻度的压缩等级，ZIP／7Z／RAR／DMG 可选择仅存储。
 - 密码确认、显示／隐藏、输入校验；提交任务后清空密码与确认字段。
 - ZIP／7Z／RAR 分卷（1 MB–1 TB），预设与自定义大小；整组保存到独立 .parts 文件夹，再一次性发布。
 - 排除 .DS_Store／._ AppleDouble／__MACOSX；默认保留其他隐藏文件。
@@ -32,9 +34,19 @@
 
 打开 LiteZip，先设置格式、压缩等级、密码与分卷，拖入文件后点击“压缩…”。勾选“分别压缩”时选择一个保存目录，每个项目生成独立结果。拖入压缩包会切换到解压；双击由 LiteZip 打开的压缩包会直接解压到同级的独立文件夹。
 
-ZIP／7Z 分卷命名为 `name.zip.001` 或 `name.7z.001`；RAR 分卷为 `name.part1.rar`，较多分卷时编号可能补零。所有分卷需在同一目录，打开第一卷即可预览、校验或解压，选择后续卷会归一到首卷，多个分卷合并为一个任务。当前 ZIP 采用 7-Zip 编号方式，不生成 `.z01` 式 ZIP。输入 `100 MB`、`1.5 GB` 或直接输入 MB 数值；单位按 1024 换算。
+ZIP／7Z 分卷命名为 `name.zip.001` 或 `name.7z.001`；RAR 分卷为 `name.part1.rar`，较多分卷时编号可能补零。所有分卷需在同一目录，打开第一卷即可预览、校验或解压，选择后续卷会归一到首卷，多个分卷合并为一个任务。兼容读取旧式 ZIP `name.z01` + `name.zip` 与 RAR `name.rar` + `name.r00` + `name.r01`。旧式 ZIP 的目录在最后的 `.zip` 文件里，需保留它。创建 ZIP 仍采用 7-Zip `.001` 编号方式。输入 `100 MB`、`1.5 GB` 或直接输入 MB 数值；单位按 1024 换算。
 
-[下载 0.3.0 开发预览版](https://github.com/gentpan/LiteZip/releases/tag/v0.3.0) · [更新记录](CHANGELOG.md)
+[下载 0.4.0 开发预览版](https://github.com/gentpan/LiteZip/releases/tag/v0.4.0) · [更新记录](CHANGELOG.md)
+
+### 使用 DMG
+
+选择 DMG 后可制作压缩只读磁盘映像；存储等级生成不压缩的只读映像。密码采用 AES-256，支持中文。文件先复制到私有快照，源文件保留；权限、扩展属性和符号链接随映像保留，链接目标不会被跟随复制。独立 AppleDouble 文件按系统磁盘映像复制规则处理；真实资源分叉与扩展属性保留。
+
+拖入 DMG 可预览内容、搜索与校验。预览在私有临时位置只读挂载，结束后卸载；“在 Finder 打开”交给 macOS DiskImageMounter，挂载加密映像时系统会再次询问密码。DMG 不走普通压缩包的逐文件解压流程，便于保留 `.app` 包结构。多卷映像、稀疏映像与 ISO 制作暂未支持。
+
+![DMG 设置](docs/screenshots/dmg-settings.png)
+
+[加密 DMG 内容预览](docs/screenshots/dmg-preview.png)
 
 ### 创建 RAR
 
@@ -98,7 +110,7 @@ GitHub Actions 的构建产物为未签名开发构建。
 
 主应用是 Developer ID 分发版本，**未启用 App Sandbox**；Finder 扩展启用 Sandbox。尚未实现 Mac App Store 的完整 security-scoped bookmark 权限流程。
 
-macOS 资源分叉、扩展属性、权限和时间戳的完整保留尚未保证。符号链接与硬链接暂时拒绝。解压总是建立独立文件夹；不提供原地覆盖或删除源文件。
+普通归档的 macOS 资源分叉、扩展属性、权限和时间戳的完整保留尚未保证。普通归档的符号链接与硬链接暂时拒绝；DMG 制作和预览可保留符号链接，使用系统挂载读取。解压总是建立独立文件夹；不提供原地覆盖或删除源文件。
 
 RAR 创建采用私有源文件快照，避免官方引擎把 `*` 等文件名当作通配符扩大选取范围。APFS 使用文件克隆，其他文件系统采用可取消的分块复制，因此按源大小的两倍预检可用空间。同一 RAR 的顶层项目不能同名；此时可分别压缩，或先重命名。
 

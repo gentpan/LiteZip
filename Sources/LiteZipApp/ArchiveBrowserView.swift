@@ -28,20 +28,21 @@ struct ArchiveBrowserView: View {
             if busy { HStack { ProgressView().controlSize(.small); Text("正在读取…"); Spacer(); Button("取消") { control.cancel() } } }
             if let message { Text(message).font(.callout).textSelection(.enabled) }
             Table(filtered) {
-                TableColumn("文件") { entry in Label(entry.path, systemImage: entry.isDirectory ? "folder" : "doc").lineLimit(1).help(entry.path) }
-                TableColumn("大小") { entry in Text(entry.isDirectory ? "—" : ByteCountFormatter.string(fromByteCount: entry.size, countStyle: .file)).monospacedDigit() }.width(100)
+                TableColumn("文件") { entry in Label(entry.path, systemImage: entry.isSymbolicLink ? "link" : entry.isDirectory ? "folder" : "doc").lineLimit(1).help(entry.path) }
+                TableColumn("大小") { entry in Text(entry.isDirectory || entry.isSymbolicLink ? "—" : ByteCountFormatter.string(fromByteCount: entry.size, countStyle: .file)).monospacedDigit() }.width(100)
                 TableColumn("加密") { entry in Text(entry.encrypted ? "是" : "—") }.width(45)
             }
             HStack {
                 Text("\(entries.count) 个项目 · \(ByteCountFormatter.string(fromByteCount: entries.reduce(0) { $0 + $1.size }, countStyle: .file))").foregroundStyle(.secondary)
                 Spacer()
-                Button("解压…") {
+                Button(ArchiveFormat.detect(url) == .dmg ? "在 Finder 打开" : "解压…") {
+                    if ArchiveFormat.detect(url) == .dmg { model.openDiskImage(url); dismiss(); return }
                     model.receive([url]); model.mode = .extract; model.password = password
                     model.chooseDestinationAfterBrowser = true; dismiss()
                 }.buttonStyle(.borderedProminent)
             }
         }.padding(24).frame(width: 720, height: 520)
-        .onAppear { load(test: false) }
+        .onAppear { password = model.password; load(test: false) }
         .onDisappear { control.cancel(); password = "" }
     }
     private func load(test: Bool) {
