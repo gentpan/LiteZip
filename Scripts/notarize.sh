@@ -7,4 +7,4 @@ xcrun stapler staple build/LiteZip.app
 xcrun stapler validate build/LiteZip.app
 spctl --assess --type execute --verbose=2 build/LiteZip.app
 ditto -c -k --sequesterRsrc --keepParent build/LiteZip.app dist/LiteZip-0.1.0-macOS-universal.zip
-shasum -a 256 dist/LiteZip-0.1.0-macOS-universal.zip > dist/SHA256SUMS
+(cd dist && shasum -a 256 LiteZip-0.1.0-macOS-universal.zip) > dist/SHA256SUMS

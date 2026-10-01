@@ -10,4 +10,4 @@ codesign --force --options runtime --timestamp --sign "$LITEZIP_SIGN_IDENTITY" "
 codesign --verify --deep --strict --verbose=2 "$app"
 mkdir -p dist
 ditto -c -k --sequesterRsrc --keepParent "$app" dist/LiteZip-0.1.0-macOS-universal.zip
-shasum -a 256 dist/LiteZip-0.1.0-macOS-universal.zip > dist/SHA256SUMS
+(cd dist && shasum -a 256 LiteZip-0.1.0-macOS-universal.zip) > dist/SHA256SUMS
