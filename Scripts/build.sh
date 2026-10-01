@@ -9,4 +9,5 @@ mkdir -p build
 /usr/bin/ditto build/DerivedData/Build/Products/Release/LiteZip.app build/LiteZip.app
 
 test "$(/usr/libexec/PlistBuddy -c 'Print :NSExtension:NSExtensionPointIdentifier' build/LiteZip.app/Contents/PlugIns/LiteZipFinder.appex/Contents/Info.plist)" = 'com.apple.FinderSync'
-test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' build/LiteZip.app/Contents/Info.plist)" = '0.1.0'
+test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' build/LiteZip.app/Contents/Info.plist)" = '0.2.0'
+test "$(/usr/libexec/PlistBuddy -c 'Print :UTExportedTypeDeclarations:0:UTTypeTagSpecification:public.filename-extension:0' build/LiteZip.app/Contents/Info.plist)" = '001'

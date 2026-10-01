@@ -15,11 +15,16 @@ final class FinderSync: FIFinderSync {
         let menu = NSMenu(title: "LiteZip")
         add("使用 LiteZip 快速压缩", action: #selector(compress), to: menu)
         add("压缩设置…", action: #selector(configure), to: menu)
-        if urls.allSatisfy({ ["zip", "7z", "rar", "tar", "gz", "tgz", "bz2", "xz", "zst"].contains($0.pathExtension.lowercased()) }) {
+        if urls.allSatisfy({ isArchive($0) }) {
             menu.addItem(.separator())
             add("解压到独立文件夹", action: #selector(extract), to: menu)
         }
         return menu
+    }
+    private func isArchive(_ url: URL) -> Bool {
+        if ["zip", "7z", "rar", "tar", "gz", "tgz", "bz2", "xz", "zst", "zstd", "tbz2", "txz"].contains(url.pathExtension.lowercased()) { return true }
+        let number = url.pathExtension
+        return number.count >= 3 && number.allSatisfy({ $0.isASCII && $0.isNumber }) && (Int(number) ?? 0) > 0 && ["zip", "7z"].contains(url.deletingPathExtension().pathExtension.lowercased())
     }
     private func add(_ title: String, action: Selector, to menu: NSMenu) {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: "")

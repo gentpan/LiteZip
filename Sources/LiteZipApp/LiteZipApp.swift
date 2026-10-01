@@ -29,8 +29,8 @@ struct LiteZipApp: App {
     @NSApplicationDelegateAdaptor(AppDelegate.self) private var delegate
     @StateObject private var model = AppModel.shared
     var body: some Scene {
-        WindowGroup("LiteZip") { MainView(model: model).environmentObject(model.preferences).frame(minWidth: 660, minHeight: 560) }
-            .defaultSize(width: 760, height: 680)
+        WindowGroup("LiteZip") { MainView(model: model).environmentObject(model.preferences).frame(minWidth: 480, minHeight: 600) }
+            .defaultSize(width: 560, height: 730)
             .commands {
                 CommandGroup(replacing: .newItem) {
                     Button("选择文件…", action: model.chooseFiles).keyboardShortcut("o")

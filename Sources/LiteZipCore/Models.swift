@@ -17,8 +17,20 @@ public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable
     public var canCreate: Bool { self != .rar }
     public var supportsPassword: Bool { [.zip, .sevenZip, .rar].contains(self) }
     public var singleFileOnly: Bool { [.gzip, .bzip2, .xz, .zstd].contains(self) }
+    public var supportsVolumes: Bool { [.zip, .sevenZip].contains(self) }
+    public var supportsStore: Bool { [.zip, .sevenZip].contains(self) }
+    /// Numbered ZIP/7Z volumes use at least three digits, beginning with .001.
+    public static func firstVolume(_ url: URL) -> URL? {
+        let number = url.pathExtension
+        let base = url.deletingPathExtension()
+        guard number.count >= 3, number.allSatisfy({ $0.isASCII && $0.isNumber }),
+              let index = Int(number), index > 0,
+              ["zip", "7z"].contains(base.pathExtension.lowercased()) else { return nil }
+        return base.appendingPathExtension("001")
+    }
     public static func detect(_ url: URL) -> ArchiveFormat? {
         if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { return nil }
+        if firstVolume(url) != nil { return detect(url.deletingPathExtension()) }
         let name = url.lastPathComponent.lowercased()
         if name.hasSuffix(".tar.gz") || name.hasSuffix(".tgz") { return .tarGzip }
         let ext = url.pathExtension.lowercased()
@@ -38,6 +50,7 @@ public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable
         return nil
     }
     public static func baseName(_ url: URL) -> String {
+        if firstVolume(url) != nil { return baseName(url.deletingPathExtension()) }
         let name = url.lastPathComponent
         for suffix in [".tar.gz", ".tar.bz2", ".tar.xz", ".tar.zst", ".tgz", ".tbz2", ".txz"] {
             if name.lowercased().hasSuffix(suffix) { return String(name.dropLast(suffix.count)) }
@@ -47,10 +60,10 @@ public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable
 }
 
 public enum CompressionLevel: Int, CaseIterable, Sendable, Identifiable {
-    case fastest = 1, fast = 3, normal = 5, maximum = 7, ultra = 9
+    case store = 0, fastest = 1, fast = 3, normal = 5, maximum = 7, ultra = 9
     public var id: Int { rawValue }
     public var title: String {
-        switch self { case .fastest: "最快"; case .fast: "快速"; case .normal: "标准"; case .maximum: "高压缩"; case .ultra: "极限" }
+        switch self { case .store: "存储"; case .fastest: "最快"; case .fast: "快速"; case .normal: "标准"; case .maximum: "高压缩"; case .ultra: "极限" }
     }
 }
 
@@ -59,8 +72,12 @@ public struct CompressionOptions: Sendable {
     public var level: CompressionLevel
     public var password: String?
     public var preserveMetadata: Bool
-    public init(format: ArchiveFormat = .zip, level: CompressionLevel = .normal, password: String? = nil, preserveMetadata: Bool = true) {
+    public var excludeMacResources: Bool
+    public var verifyArchive: Bool
+    public var volumeSizeBytes: Int64?
+    public init(format: ArchiveFormat = .zip, level: CompressionLevel = .normal, password: String? = nil, preserveMetadata: Bool = true, excludeMacResources: Bool = true, verifyArchive: Bool = true, volumeSizeBytes: Int64? = nil) {
         self.format = format; self.level = level; self.password = password; self.preserveMetadata = preserveMetadata
+        self.excludeMacResources = excludeMacResources; self.verifyArchive = verifyArchive; self.volumeSizeBytes = volumeSizeBytes
     }
 }
 
@@ -93,7 +110,7 @@ public struct ArchiveProgress: Sendable {
 
 public enum ArchiveError: Error, LocalizedError, Sendable, Equatable {
     case invalidArchive, corruptedArchive, wrongPassword, unsupportedFormat, missingVolume, diskFull, permissionDenied, cancelled
-    case unsafePath, linksUnsupported, tooLarge, ambiguousListing, invalidInput, engineMissing, zipPasswordEncoding
+    case unsafePath, linksUnsupported, tooLarge, ambiguousListing, invalidInput, engineMissing, zipPasswordEncoding, invalidVolumeSize
     public var errorDescription: String? {
         switch self {
         case .invalidArchive: "这个文件不是有效的压缩包，或文件头已损坏。"
@@ -110,6 +127,7 @@ public enum ArchiveError: Error, LocalizedError, Sendable, Equatable {
         case .ambiguousListing: "文件名包含无法安全解析的换行或元数据，已停止处理。"
         case .invalidInput: "请选择有效的文件；单文件压缩格式只能处理一个普通文件。"
         case .zipPasswordEncoding: "ZIP 加密支持不超过 99 个 ASCII 字符（英文、数字和符号）。中文、Emoji 或更长密码请选择 7Z。"
+        case .invalidVolumeSize: "分卷大小应为 1 MB 到 1 TB，例如 100 MB 或 1.5 GB。仅 ZIP 和 7Z 支持分卷。"
         case .engineMissing: "内置压缩引擎缺失，请重新安装 LiteZip。"
         }
     }

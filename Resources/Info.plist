@@ -23,6 +23,7 @@
 				<string>zstd</string>
 				<string>tbz2</string>
 				<string>txz</string>
+				<string>001</string>
 			</array>
 			<key>CFBundleTypeName</key>
 			<string>Archives</string>
@@ -40,6 +41,7 @@
 				<string>public.bzip2-archive</string>
 				<string>org.tukaani.xz-archive</string>
 				<string>org.zstandard.zstd-archive</string>
+				<string>app.litezip.split-archive</string>
 			</array>
 		</dict>
 		<dict>
@@ -69,7 +71,7 @@
 	<key>CFBundlePackageType</key>
 	<string>APPL</string>
 	<key>CFBundleShortVersionString</key>
-	<string>0.1.0</string>
+	<string>0.2.0</string>
 	<key>CFBundleURLTypes</key>
 	<array>
 		<dict>
@@ -82,13 +84,33 @@
 		</dict>
 	</array>
 	<key>CFBundleVersion</key>
-	<string>1</string>
+	<string>2</string>
 	<key>LSMinimumSystemVersion</key>
 	<string>13.0</string>
 	<key>NSHighResolutionCapable</key>
 	<true/>
 	<key>NSHumanReadableCopyright</key>
 	<string>Copyright © 2026 LiteZip contributors</string>
+	<key>UTExportedTypeDeclarations</key>
+	<array>
+		<dict>
+			<key>UTTypeConformsTo</key>
+			<array>
+				<string>public.archive</string>
+			</array>
+			<key>UTTypeDescription</key>
+			<string>Split Archive First Volume</string>
+			<key>UTTypeIdentifier</key>
+			<string>app.litezip.split-archive</string>
+			<key>UTTypeTagSpecification</key>
+			<dict>
+				<key>public.filename-extension</key>
+				<array>
+					<string>001</string>
+				</array>
+			</dict>
+		</dict>
+	</array>
 	<key>UTImportedTypeDeclarations</key>
 	<array>
 		<dict>

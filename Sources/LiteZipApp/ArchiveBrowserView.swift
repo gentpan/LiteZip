@@ -36,7 +36,8 @@ struct ArchiveBrowserView: View {
                 Text("\(entries.count) 个项目 · \(ByteCountFormatter.string(fromByteCount: entries.reduce(0) { $0 + $1.size }, countStyle: .file))").foregroundStyle(.secondary)
                 Spacer()
                 Button("解压…") {
-                    model.receive([url]); model.password = password; model.mode = .extract; dismiss(); model.chooseDestination()
+                    model.receive([url]); model.mode = .extract; model.password = password
+                    model.chooseDestinationAfterBrowser = true; dismiss()
                 }.buttonStyle(.borderedProminent)
             }
         }.padding(24).frame(width: 720, height: 520)

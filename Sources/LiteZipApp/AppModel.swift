@@ -35,7 +35,7 @@ final class AppPreferences: ObservableObject {
         appearance = AppAppearance(rawValue: defaults.string(forKey: "appearance") ?? "跟随系统") ?? .system
         let format = ArchiveFormat(rawValue: defaults.string(forKey: "format") ?? "zip") ?? .zip
         defaultFormat = format.canCreate ? format : .zip
-        level = CompressionLevel(rawValue: defaults.integer(forKey: "level")) ?? .normal
+        level = CompressionLevel(rawValue: defaults.object(forKey: "level") as? Int ?? 5) ?? .normal
         revealResult = defaults.object(forKey: "reveal") as? Bool ?? true
         maximumGB = max(1, min(1000, defaults.object(forKey: "maximumGB") as? Int ?? 100))
     }
@@ -70,12 +70,19 @@ final class AppModel: ObservableObject {
     let preferences = AppPreferences()
     @Published var files = [URL]()
     @Published var jobs = [ArchiveJob]()
-    @Published var mode = Mode.compress
+    @Published var mode = Mode.compress { didSet { if mode != oldValue { clearPassword() } } }
     @Published var format = ArchiveFormat.zip
     @Published var level = CompressionLevel.normal
     @Published var password = ""
+    @Published var passwordConfirmation = ""
+    @Published var showPassword = false
+    @Published var volumeSize = ""
+    @Published var excludeMacResources = true
+    @Published var verifyArchive = true
+    @Published var separateArchives = false
     @Published var errorMessage: String?
     @Published var browserURL: URL?
+    var chooseDestinationAfterBrowser = false
     private var running = 0
     private var activePanel: NSSavePanel?
     private let logger = Logger(subsystem: "app.litezip.LiteZip", category: "Tasks")
@@ -87,6 +94,34 @@ final class AppModel: ObservableObject {
         let count = files.filter { ArchiveFormat.detect($0) != nil }.count
         return count > 0 && count < files.count
     }
+    var validationMessage: String? {
+        if mode == .extract {
+            return files.contains { ArchiveFormat.detect($0) == nil } ? "解压模式仅支持压缩包，请移除普通文件或切换到压缩。" : nil
+        }
+        if format.supportsPassword && !password.isEmpty {
+            if passwordConfirmation != password { return passwordConfirmation.isEmpty ? "请再次输入密码以确认。" : "两次输入的密码不一致。" }
+            if password.utf8.count > 4096 || password.contains("\n") || password.contains("\r") || password.contains("\0") { return "密码长度或字符不受支持。" }
+            if format == .zip && (!password.unicodeScalars.allSatisfy({ $0.value < 128 }) || password.count > 99) { return ArchiveError.zipPasswordEncoding.localizedDescription }
+        }
+        if format.supportsVolumes { do { _ = try VolumeSize.parse(volumeSize) } catch { return error.localizedDescription } }
+        if format.singleFileOnly && !files.isEmpty {
+            if !separateArchives && files.count > 1 { return "此格式每个压缩包只能包含一个文件，请勾选分别压缩，或选择 ZIP／7Z。" }
+            if files.contains(where: { (try? $0.resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) != true }) { return "此格式只能压缩普通文件。文件夹请使用 ZIP、7Z 或 TAR.GZ。" }
+        }
+        return nil
+    }
+    func resetSelection() { files = []; clearPassword() }
+    func clearPassword() { password = ""; passwordConfirmation = ""; showPassword = false }
+    func formatChanged() {
+        if !format.supportsPassword { clearPassword() }
+        if !format.supportsVolumes { volumeSize = "" }
+        if level == .store && !format.supportsStore { level = .normal }
+    }
+    private func selectedOptions() throws -> CompressionOptions {
+        .init(format: format, level: level, password: format.supportsPassword && !password.isEmpty ? password : nil,
+              excludeMacResources: excludeMacResources, verifyArchive: verifyArchive,
+              volumeSizeBytes: format.supportsVolumes ? try VolumeSize.parse(volumeSize) : nil)
+    }
     var engineURL: URL {
         Bundle.main.url(forResource: "7zz", withExtension: nil, subdirectory: "Engine") ?? Bundle.main.bundleURL.appendingPathComponent("Contents/Resources/Engine/7zz")
     }
@@ -94,21 +129,23 @@ final class AppModel: ObservableObject {
         ArchiveService(engineURL: engineURL, maximumExtractedBytes: Int64(preferences.maximumGB) * 1_024 * 1_024 * 1_024)
     }
     init() {
-        format = preferences.defaultFormat; level = preferences.level
+        format = preferences.defaultFormat; level = preferences.level; formatChanged()
         Task.detached(priority: .utility) { ArchiveService.cleanupAbandonedTemporaryFiles() }
     }
     func receive(_ urls: [URL]) {
         let valid = urls.filter { $0.isFileURL && FileManager.default.fileExists(atPath: $0.path) }
         guard !valid.isEmpty else { return }
-        files = Array(NSOrderedSet(array: valid)) as? [URL] ?? valid
-        password = ""
-        if files.allSatisfy({ ArchiveFormat.detect($0) != nil }) { mode = .extract }
-        else { mode = .compress }
+        // Selecting a set of volumes represents one archive, not one job per part.
+        let normalized = valid.map { ArchiveFormat.firstVolume($0) ?? $0 }
+        files = Array(NSOrderedSet(array: normalized)) as? [URL] ?? normalized
+        let newMode: Mode = files.allSatisfy({ ArchiveFormat.detect($0) != nil }) ? .extract : .compress
+        if mode != newMode { clearPassword() }
+        mode = newMode
         NSApp.activate(ignoringOtherApps: true)
     }
     func open(_ urls: [URL]) {
         for url in urls where url.scheme == "litezip" { handleFinder(url) }
-        let files = urls.filter(\.isFileURL)
+        let files = Array(Set(urls.filter(\.isFileURL).map { ArchiveFormat.firstVolume($0) ?? $0 })).sorted { $0.path < $1.path }
         guard !files.isEmpty else { return }
         if files.allSatisfy({ ArchiveFormat.detect($0) != nil }) {
             for file in files {
@@ -123,8 +160,17 @@ final class AppModel: ObservableObject {
             completion(response)
             self?.activePanel = nil
         }
-        if let window = NSApp.keyWindow ?? NSApp.mainWindow { panel.beginSheetModal(for: window, completionHandler: handler) }
-        else { panel.begin(completionHandler: handler) }
+        // The closing browser sheet can briefly remain the key window. Attach
+        // file panels to the main window after its previous sheet has detached.
+        Task { @MainActor in
+            if let window = NSApp.mainWindow ?? NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }) {
+                for _ in 0..<50 where window.attachedSheet != nil { try? await Task.sleep(for: .milliseconds(100)) }
+                guard window.isVisible, window.attachedSheet == nil else {
+                    activePanel = nil; errorMessage = "请先关闭当前对话框，再选择保存位置。"; return
+                }
+                panel.beginSheetModal(for: window, completionHandler: handler)
+            } else { panel.begin(completionHandler: handler) }
+        }
     }
     func chooseFiles() {
         let panel = NSOpenPanel()
@@ -136,27 +182,49 @@ final class AppModel: ObservableObject {
     }
     func chooseDestination() {
         guard !files.isEmpty else { return }
+        if let message = validationMessage { errorMessage = message; return }
         if mode == .compress {
+            let inputs = files
+            let options: CompressionOptions
+            do { options = try selectedOptions() } catch { errorMessage = error.localizedDescription; return }
+            if separateArchives {
+                let panel = NSOpenPanel()
+                panel.title = "选择压缩包保存位置"; panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = true
+                panel.prompt = "保存到此处"; panel.directoryURL = inputs[0].deletingLastPathComponent()
+                panel.message = "每个文件或文件夹生成一个独立压缩包，同名结果会自动编号。"
+                present(panel) { [weak self] response in
+                    guard let self, response == .OK, let directory = panel.url else { return }
+                    do {
+                        for plan in try CompressionPlanning.separate(files: inputs, directory: directory, format: options.format) {
+                            self.enqueue(files: plan.files, destination: plan.destination, extracting: false, options: options)
+                        }
+                        self.resetSelection()
+                    } catch { self.errorMessage = error.localizedDescription }
+                }
+                return
+            }
             let panel = NSSavePanel()
             panel.title = "保存压缩包"; panel.canCreateDirectories = true
-            let name = files.count == 1 ? files[0].deletingPathExtension().lastPathComponent : "Archive"
-            panel.nameFieldStringValue = name + "." + format.suffix
-            panel.directoryURL = files[0].deletingLastPathComponent()
+            panel.nameFieldStringValue = inputs.count == 1 ? CompressionPlanning.name(for: inputs[0], format: options.format) : "Archive." + options.format.suffix
+            panel.directoryURL = inputs[0].deletingLastPathComponent()
+            if options.volumeSizeBytes != nil { panel.message = "整组分卷保存到同名 .parts 文件夹。解压时将所有分卷放在一起，打开 .001 文件。" }
             present(panel) { [weak self] response in
                 guard let self, response == .OK, let url = panel.url else { return }
-                self.enqueue(files: self.files, destination: url, extracting: false, options: .init(format: self.format, level: self.level, password: self.password.isEmpty ? nil : self.password))
-                self.password = ""; self.files = []
+                let destination = url.lastPathComponent.lowercased().hasSuffix("." + options.format.suffix) ? url : url.appendingPathExtension(options.format.suffix)
+                self.enqueue(files: inputs, destination: destination, extracting: false, options: options)
+                self.resetSelection()
             }
         } else {
+            let inputs = files, secret = password.isEmpty ? nil : password
             let panel = NSOpenPanel()
             panel.title = "选择解压位置"; panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = true
             panel.prompt = "解压到此处"; panel.directoryURL = files[0].deletingLastPathComponent()
             present(panel) { [weak self] response in
                 guard let self, response == .OK, let directory = panel.url else { return }
-                for file in self.files {
-                    self.enqueue(files: [file], destination: directory.appendingPathComponent(ArchiveFormat.baseName(file)), extracting: true, options: .init(password: self.password.isEmpty ? nil : self.password))
+                for file in inputs {
+                    self.enqueue(files: [file], destination: directory.appendingPathComponent(ArchiveFormat.baseName(file)), extracting: true, options: .init(password: secret))
                 }
-                self.password = ""; self.files = []
+                self.resetSelection()
             }
         }
     }
@@ -172,6 +240,9 @@ final class AppModel: ObservableObject {
     func retry(_ job: ArchiveJob) {
         receive(job.files); mode = job.extracting ? .extract : .compress
         format = job.options.format; level = job.options.level
+        excludeMacResources = job.options.excludeMacResources; verifyArchive = job.options.verifyArchive
+        volumeSize = job.options.volumeSizeBytes.map { "\(Double($0) / 1_024 / 1_024) MB" } ?? ""
+        separateArchives = false
     }
     func clearFinished() { jobs.removeAll { $0.state.isFinished } }
     private func pump() {
@@ -203,12 +274,14 @@ final class AppModel: ObservableObject {
     }
     private func handleFinder(_ url: URL) {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false), let action = components.host else { return }
-        let files = (components.queryItems ?? []).filter { $0.name == "file" }.compactMap { $0.value }.map { URL(fileURLWithPath: $0) }
+        let rawFiles = (components.queryItems ?? []).filter { $0.name == "file" }.compactMap { $0.value }.map { URL(fileURLWithPath: $0) }
+        let files = Array(NSOrderedSet(array: rawFiles.map { action == "extract" ? ArchiveFormat.firstVolume($0) ?? $0 : $0 })) as? [URL] ?? rawFiles
         guard !files.isEmpty, files.count <= 1000 else { return }
         switch action {
         case "compress":
-            let name = files.count == 1 ? files[0].deletingPathExtension().lastPathComponent : "Archive"
-            enqueue(files: files, destination: files[0].deletingLastPathComponent().appendingPathComponent(name + "." + preferences.defaultFormat.suffix), extracting: false, options: .init(format: preferences.defaultFormat, level: preferences.level))
+            let name = files.count == 1 ? CompressionPlanning.name(for: files[0], format: preferences.defaultFormat) : "Archive." + preferences.defaultFormat.suffix
+            let level = preferences.level == .store && !preferences.defaultFormat.supportsStore ? CompressionLevel.normal : preferences.level
+            enqueue(files: files, destination: files[0].deletingLastPathComponent().appendingPathComponent(name), extracting: false, options: .init(format: preferences.defaultFormat, level: level))
         case "extract":
             for file in files { enqueue(files: [file], destination: file.deletingLastPathComponent().appendingPathComponent(ArchiveFormat.baseName(file)), extracting: true, options: .init()) }
         default: receive(files)

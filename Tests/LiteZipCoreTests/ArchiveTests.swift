@@ -1,4 +1,5 @@
 import Foundation
+import Darwin
 import Testing
 @testable import LiteZipCore
 
@@ -25,6 +26,93 @@ private struct Fixture {
 
 @Suite("Archive integration")
 struct ArchiveTests {
+    @Test("Mac resource exclusions keep ordinary hidden and literal files", arguments: [ArchiveFormat.zip, .sevenZip, .tar, .tarGzip])
+    func macResources(format: ArchiveFormat) async throws {
+        let f = try Fixture(); defer { f.close() }
+        for name in ["folder/.DS_Store", "folder/deep/.DS_Store", "folder/deep/._photo.jpg", "folder/__MACOSX/meta", "folder/.hidden", "folder/wild*.txt", "folder/deep/photo.jpg"] { _ = try f.makeFile(name) }
+        let folder = f.root.appendingPathComponent("folder")
+        for exclude in [true, false] {
+            let archive = try await f.service.compress(files: [folder], destination: f.root.appendingPathComponent("result." + format.suffix), options: .init(format: format, excludeMacResources: exclude, verifyArchive: exclude))
+            let entries = try await f.service.list(archive: archive)
+            let paths = Set(entries.map(\.path))
+            #expect(paths.contains("folder/.hidden"))
+            #expect(paths.contains("folder/wild*.txt"))
+            #expect(paths.contains("folder/deep/photo.jpg"))
+            #expect(paths.contains("folder/deep/._photo.jpg") == !exclude)
+            #expect(paths.contains("folder/deep/.DS_Store") == !exclude)
+            #expect(paths.contains("folder/__MACOSX/meta") == !exclude)
+            try await f.service.test(archive: archive)
+        }
+        try f.assertClean()
+    }
+    @Test("Compressed TAR preview and test reject unsafe inner entries", arguments: ["symlink.tar", "hardlink.tar", "fifo.tar"])
+    func compressedTarSafety(name: String) async throws {
+        let f = try Fixture(); defer { f.close() }
+        let archive = f.root.appendingPathComponent("unsafe.tar.gz")
+        _ = try ProcessRunner(executable: f.service.engineURL).run(["a", "-tgzip", "-bso0", "--", archive.path, f.input(name).path], control: .init())
+        await #expect(throws: ArchiveError.linksUnsupported) { _ = try await f.service.list(archive: archive) }
+        await #expect(throws: ArchiveError.linksUnsupported) { try await f.service.test(archive: archive) }
+        try f.assertClean()
+    }
+    @Test("Encrypted volumes round trip, collisions, missing and linked parts", arguments: [ArchiveFormat.zip, .sevenZip])
+    func volumes(format: ArchiveFormat) async throws {
+        let f = try Fixture(); defer { f.close() }
+        var data = Data(count: 2 * 1_024 * 1_024 + 8192)
+        data.withUnsafeMutableBytes { arc4random_buf($0.baseAddress!, $0.count) }
+        let source = try f.makeFile("中文 😀.bin", contents: data)
+        let options = CompressionOptions(format: format, level: .fastest, password: "test password", volumeSizeBytes: VolumeSize.minimum)
+        let destination = f.root.appendingPathComponent("测试." + format.suffix)
+        let folder = try await f.service.compress(files: [source], destination: destination, options: options)
+        #expect(folder.lastPathComponent == destination.lastPathComponent + ".parts")
+        let parts = try FileManager.default.contentsOfDirectory(at: folder, includingPropertiesForKeys: nil).sorted { $0.path < $1.path }
+        #expect(parts.count == 3)
+        for part in parts { #expect(try part.resourceValues(forKeys: [.fileSizeKey]).fileSize! <= VolumeSize.minimum) }
+        #expect(ArchiveFormat.detect(parts[0]) == format)
+        #expect(ArchiveFormat.baseName(parts[0]) == "测试")
+        #expect(try await f.service.list(archive: parts[1], password: options.password).contains { $0.path == source.lastPathComponent })
+        try await f.service.test(archive: parts[0], password: options.password)
+        let result = try await f.service.extract(archive: parts[0], destination: f.root.appendingPathComponent("out"), password: options.password)
+        #expect(try Data(contentsOf: result.appendingPathComponent(source.lastPathComponent)) == data)
+        await #expect(throws: ArchiveError.wrongPassword) { _ = try await f.service.extract(archive: parts[0], destination: f.root.appendingPathComponent("wrong"), password: "wrong") }
+        let second = try await f.service.compress(files: [source], destination: destination, options: options)
+        #expect(second.lastPathComponent == folder.lastPathComponent + " 2")
+        try FileManager.default.removeItem(at: parts[1])
+        await #expect(throws: ArchiveError.missingVolume) { _ = try await f.service.list(archive: parts[0], password: options.password) }
+        try FileManager.default.createSymbolicLink(at: parts[1], withDestinationURL: source)
+        await #expect(throws: ArchiveError.linksUnsupported) { _ = try await f.service.extract(archive: parts[0], destination: f.root.appendingPathComponent("linked"), password: options.password) }
+        try f.assertClean()
+    }
+    @Test("Volume input validation and store level", arguments: [ArchiveFormat.zip, .sevenZip])
+    func volumeOptions(format: ArchiveFormat) async throws {
+        let f = try Fixture(); defer { f.close() }
+        let source = try f.makeFile()
+        let archive = try await f.service.compress(files: [source], destination: f.root.appendingPathComponent("store." + format.suffix), options: .init(format: format, level: .store))
+        try await f.service.test(archive: archive)
+        await #expect(throws: ArchiveError.invalidVolumeSize) { _ = try await f.service.compress(files: [source], destination: f.root.appendingPathComponent("invalid.zip"), options: .init(volumeSizeBytes: -1)) }
+        await #expect(throws: ArchiveError.invalidVolumeSize) { _ = try await f.service.compress(files: [source], destination: f.root.appendingPathComponent("invalid.tar"), options: .init(format: .tar, volumeSizeBytes: VolumeSize.minimum)) }
+        #expect(try VolumeSize.parse("1.5 GB") == 1_610_612_736)
+        #expect(try VolumeSize.parse("100") == 104_857_600)
+        #expect(try VolumeSize.parse("  ") == nil)
+        for text in ["0", "-1 MB", "1;rm", "1e9", "999999 TB", "10 KB", "NaN", "1 MB garbage"] { #expect(throws: ArchiveError.invalidVolumeSize) { try VolumeSize.parse(text) } }
+        try f.assertClean()
+    }
+    @Test("Separate plans produce independent archives and preserve dotted folder names")
+    func separate() async throws {
+        let f = try Fixture(); defer { f.close() }
+        let first = try f.makeFile("first.txt")
+        let second = try f.makeFile("second.txt")
+        _ = try f.makeFile("project.v2/child.txt")
+        let output = f.root.appendingPathComponent("archives")
+        try FileManager.default.createDirectory(at: output, withIntermediateDirectories: false)
+        let plans = try CompressionPlanning.separate(files: [first, second, f.root.appendingPathComponent("project.v2")], directory: output, format: .zip)
+        #expect(plans.last?.destination.lastPathComponent == "project.v2.zip")
+        for plan in plans {
+            let archive = try await f.service.compress(files: plan.files, destination: plan.destination)
+            let entries = try await f.service.list(archive: archive)
+            #expect(entries.contains { $0.path.hasPrefix(plan.files[0].lastPathComponent) })
+            #expect(!entries.contains { $0.path == (plan.files[0] == first ? second : first).lastPathComponent })
+        }
+    }
     @Test("Unicode and zero-byte round trip", arguments: [ArchiveFormat.zip, .sevenZip, .tar, .tarGzip, .gzip, .bzip2, .xz, .zstd])
     func roundTrip(format: ArchiveFormat) async throws {
         let f = try Fixture(); defer { f.close() }
@@ -132,15 +220,16 @@ struct ArchiveTests {
         await #expect(throws: (any Error).self) { _ = try await f.service.extract(archive: broken, destination: f.root.appendingPathComponent("out")) }
         try f.assertClean()
     }
-    @Test("Cancellation cleans staged output")
-    func cancellation() async throws {
+    @Test("Cancellation cleans staged output", arguments: [false, true])
+    func cancellation(volumes: Bool) async throws {
         let f = try Fixture(); defer { f.close() }
         let file = try f.makeFile("large.bin", contents: Data(repeating: 42, count: 32 * 1024 * 1024))
         let control = OperationControl(), destination = f.root.appendingPathComponent("out.7z")
-        let task = Task { try await f.service.compress(files: [file], destination: destination, options: .init(format: .sevenZip, level: .ultra), control: control) }
+        let task = Task { try await f.service.compress(files: [file], destination: destination, options: .init(format: .sevenZip, level: .ultra, volumeSizeBytes: volumes ? VolumeSize.minimum : nil), control: control) }
         try await Task.sleep(for: .milliseconds(50)); control.cancel()
         await #expect(throws: ArchiveError.cancelled) { try await task.value }
-        #expect(!FileManager.default.fileExists(atPath: destination.path)); try f.assertClean()
+        #expect(!FileManager.default.fileExists(atPath: destination.path))
+        #expect(!FileManager.default.fileExists(atPath: destination.appendingPathExtension("parts").path)); try f.assertClean()
     }
     @Test("ZIP Unicode password has a clear error")
     func unicodeZIP() async throws {

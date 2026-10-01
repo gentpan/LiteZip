@@ -9,9 +9,10 @@ public struct ArchiveService: ArchiveServiceProtocol {
         self.engineURL = engineURL; self.zstdURL = zstdURL ?? engineURL.deletingLastPathComponent().appendingPathComponent("zstd"); self.maximumExtractedBytes = maximumExtractedBytes
     }
     public func list(archive: URL, password: String? = nil, control: OperationControl = .init()) async throws -> [ArchiveEntry] {
-        try await background(control: control) { try listing(archive: archive, password: password, control: control) }
+        try await background(control: control) { try withPreparedInput(archive, password: password, control: control) { _, entries in entries } }
     }
     private func listing(archive: URL, password: String?, control: OperationControl) throws -> [ArchiveEntry] {
+        let archive = try validatedInput(archive)
         let data = try ProcessRunner(executable: engineURL).run(["l", "-slt", "-ba", "-bd", "-bse2", "-sccUTF-8", "--", archive.path], password: password, control: control)
         guard let text = String(data: data, encoding: .utf8) else { throw ArchiveError.ambiguousListing }
         let streamFormat = ArchiveFormat.detect(archive)
@@ -22,13 +23,19 @@ public struct ArchiveService: ArchiveServiceProtocol {
     }
     public func test(archive: URL, password: String? = nil, control: OperationControl = .init()) async throws {
         try await background(control: control) {
-            _ = try listing(archive: archive, password: password, control: control)
-            _ = try ProcessRunner(executable: engineURL).run(["t", "-bd", "-bso0", "-bse2", "--", archive.path], password: password, control: control)
+            try withPreparedInput(archive, password: password, control: control) { input, _ in
+                _ = try ProcessRunner(executable: engineURL).run(["t", "-bd", "-bso0", "-bse2", "--", input.path], password: password, control: control)
+            }
         }
     }
     public func compress(files: [URL], destination: URL, options: CompressionOptions = .init(), control: OperationControl = .init(), progress: @escaping @Sendable (ArchiveProgress) -> Void = { _ in }) async throws -> URL {
         try await background(control: control) {
             guard !files.isEmpty, options.format.canCreate else { throw ArchiveError.unsupportedFormat }
+            if options.level == .store && !options.format.supportsStore { throw ArchiveError.unsupportedFormat }
+            if let size = options.volumeSizeBytes {
+                guard options.format.supportsVolumes, size >= VolumeSize.minimum, size <= VolumeSize.maximum else { throw ArchiveError.invalidVolumeSize }
+                guard destination.lastPathComponent.lowercased().hasSuffix("." + options.format.suffix) else { throw ArchiveError.invalidInput }
+            }
             if options.password?.isEmpty == false && !options.format.supportsPassword { throw ArchiveError.unsupportedFormat }
             if options.format.singleFileOnly {
                 guard files.count == 1, try files[0].resourceValues(forKeys: [.isRegularFileKey]).isRegularFile == true else { throw ArchiveError.invalidInput }
@@ -38,16 +45,23 @@ public struct ArchiveService: ArchiveServiceProtocol {
             let canonicalFiles = files.map { $0.standardizedFileURL }
             guard Set(canonicalFiles).count == files.count else { throw ArchiveError.invalidInput }
             for file in canonicalFiles {
-                try inspectSource(file, control: control, total: &total)
+                guard !options.excludeMacResources || !CompressionPlanning.isMacResource(file) else { throw ArchiveError.invalidInput }
+                try inspectSource(file, excludeMacResources: options.excludeMacResources, control: control, total: &total)
                 if file.hasDirectoryPath || (try? file.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true {
-                    guard !destination.standardizedFileURL.path.hasPrefix(file.path + "/") else { throw ArchiveError.invalidInput }
+                    guard !destination.resolvingSymlinksInPath().path.hasPrefix(file.resolvingSymlinksInPath().path + "/") else { throw ArchiveError.invalidInput }
                 }
             }
+            if let size = options.volumeSizeBytes, total / size >= 10_000 { throw ArchiveError.tooLarge }
             let directory = destination.deletingLastPathComponent()
             guard ArchiveSafety.availableBytes(at: directory) > total + 16 * 1_024 * 1_024 else { throw ArchiveError.diskFull }
             let staging = try makeStaging(in: directory)
             defer { StagingRegistry.remove(staging) }
-            let partial = staging.appendingPathComponent("archive." + options.format.suffix)
+            let volumeDirectory = staging.appendingPathComponent("volumes", isDirectory: true)
+            if options.volumeSizeBytes != nil {
+                try ArchiveSafety.validate(path: destination.lastPathComponent)
+                try FileManager.default.createDirectory(at: volumeDirectory, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
+            }
+            let partial = options.volumeSizeBytes == nil ? staging.appendingPathComponent("archive." + options.format.suffix) : volumeDirectory.appendingPathComponent(destination.lastPathComponent)
             let parents = Set(canonicalFiles.map { $0.deletingLastPathComponent() })
             let workingDirectory = parents.count == 1 ? canonicalFiles[0].deletingLastPathComponent() : nil
             let paths = canonicalFiles.map { workingDirectory == nil ? $0.path : "./" + $0.lastPathComponent }
@@ -68,6 +82,10 @@ public struct ArchiveService: ArchiveServiceProtocol {
             }
             progress(ArchiveProgress(totalBytes: total, currentFile: "准备压缩…"))
             var arguments = ["a", "-t" + options.format.engineType, "-mx=\(options.level.rawValue)", "-bsp1", "-bso1", "-bse2", "-bb0", "-sccUTF-8", "-spd", "-mmt=2"]
+            // Explicit wildcard mode applies only to these exclusions; input names stay literal.
+            let exclusions = options.excludeMacResources ? ["-xrw!.DS_Store", "-xrw!._*", "-xrw!__MACOSX"] : []
+            arguments += exclusions
+            if let size = options.volumeSizeBytes { arguments.append("-v\(size)b") }
             if options.format == .tar { arguments.removeAll { $0.hasPrefix("-mx=") || $0.hasPrefix("-mmt=") } }
             if let password = options.password, !password.isEmpty {
                 arguments.append("-p")
@@ -79,17 +97,21 @@ public struct ArchiveService: ArchiveServiceProtocol {
                 _ = try ProcessRunner(executable: zstd).run(["-q", "-T2", "-\(options.level.rawValue)", "-o", partial.path, "--", canonicalFiles[0].path], control: control)
             } else if options.format == .tarGzip {
                 let tar = staging.appendingPathComponent("payload.tar")
-                _ = try runner.run(["a", "-ttar", "-bsp1", "-bse2", "-spd", "--", tar.path] + paths, directory: workingDirectory, control: control, output: report)
+                _ = try runner.run(["a", "-ttar", "-bsp1", "-bse2", "-spd"] + exclusions + ["--", tar.path] + paths, directory: workingDirectory, control: control, output: report)
                 _ = try runner.run(["a", "-tgzip", "-mx=\(options.level.rawValue)", "-bsp1", "-bse2", "--", partial.path, tar.path], control: control, output: report)
             } else {
                 _ = try runner.run(arguments + ["--", partial.path] + paths, directory: workingDirectory, password: options.password, control: control, output: report)
             }
             try control.check()
-            // Do not publish a partially written or unverifiable archive.
-            _ = try runner.run(["t", "-bd", "-bso0", "-bse2", "--", partial.path], password: options.password, control: control)
-            _ = try listing(archive: partial, password: options.password, control: control)
+            let readable = options.volumeSizeBytes == nil ? partial : partial.appendingPathExtension("001")
+            if options.verifyArchive {
+                progress(ArchiveProgress(processedBytes: total, totalBytes: total, currentFile: "正在验证完整性…"))
+                _ = try runner.run(["t", "-bd", "-bso0", "-bse2", "--", readable.path], password: options.password, control: control)
+            }
+            try withPreparedInput(readable, password: options.password, control: control) { _, _ in () }
             try control.check()
-            let result = try publish(partial, proposed: destination)
+            // Publish the complete volume set with one non-overwriting atomic rename.
+            let result = options.volumeSizeBytes == nil ? try publish(partial, proposed: destination) : try publish(volumeDirectory, proposed: destination.appendingPathExtension("parts"))
             progress(ArchiveProgress(fraction: 1, processedBytes: total, totalBytes: total))
             return result
         }
@@ -101,17 +123,7 @@ public struct ArchiveService: ArchiveServiceProtocol {
             defer { StagingRegistry.remove(staging) }
             let content = staging.appendingPathComponent("contents", isDirectory: true)
             try fm.createDirectory(at: content, withIntermediateDirectories: false, attributes: [.posixPermissions: 0o700])
-            var input = archive
-            var entries = try listing(archive: input, password: password, control: control)
-            // Decode compressed TAR streams once before applying the same entry policy.
-            let lower = archive.lastPathComponent.lowercased()
-            if [".tar.gz", ".tgz", ".tar.bz2", ".tbz2", ".tar.xz", ".txz", ".tar.zst"].contains(where: lower.hasSuffix) {
-                guard entries.count == 1, !entries[0].isDirectory else { throw ArchiveError.invalidArchive }
-                let tar = staging.appendingPathComponent("payload.tar")
-                try stream(archive: input, entry: entries[0], target: tar, password: password, control: control, onBytes: { _ in })
-                input = tar
-                entries = try listing(archive: input, password: password, control: control)
-            }
+            let (input, entries) = try prepareInput(archive, staging: staging, password: password, control: control)
             let total = try ArchiveSafety.validate(entries: entries, maximumBytes: maximumExtractedBytes)
             guard ArchiveSafety.availableBytes(at: directory) > total + 16 * 1_024 * 1_024 else { throw ArchiveError.diskFull }
             let start = Date()
@@ -141,6 +153,27 @@ public struct ArchiveService: ArchiveServiceProtocol {
             return result
         }
     }
+    private func isCompressedTar(_ archive: URL) -> Bool {
+        let lower = archive.lastPathComponent.lowercased()
+        return [".tar.gz", ".tgz", ".tar.bz2", ".tbz2", ".tar.xz", ".txz", ".tar.zst"].contains(where: lower.hasSuffix)
+    }
+    private func prepareInput(_ archive: URL, staging: URL, password: String?, control: OperationControl) throws -> (URL, [ArchiveEntry]) {
+        let input = try validatedInput(archive)
+        let entries = try listing(archive: input, password: password, control: control)
+        guard isCompressedTar(input) else { return (input, entries) }
+        guard entries.count == 1, !entries[0].isDirectory else { throw ArchiveError.invalidArchive }
+        let tar = staging.appendingPathComponent("payload.tar")
+        try stream(archive: input, entry: entries[0], target: tar, password: password, control: control, onBytes: { _ in })
+        return (tar, try listing(archive: tar, password: password, control: control))
+    }
+    private func withPreparedInput<T>(_ archive: URL, password: String?, control: OperationControl, body: (URL, [ArchiveEntry]) throws -> T) throws -> T {
+        guard isCompressedTar(archive) else { return try body(validatedInput(archive), listing(archive: archive, password: password, control: control)) }
+        // Browsing read-only archives must not require write access to their parent.
+        let staging = try makeStaging(in: FileManager.default.temporaryDirectory)
+        defer { StagingRegistry.remove(staging) }
+        let (input, entries) = try prepareInput(archive, staging: staging, password: password, control: control)
+        return try body(input, entries)
+    }
     private func stream(archive: URL, entry: ArchiveEntry, target: URL, password: String?, control: OperationControl, onBytes: @escaping (Int) -> Void) throws {
         // The engine never receives an output directory. Only LiteZip can create files.
         let descriptor = open(target.path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, 0o644)
@@ -157,14 +190,15 @@ public struct ArchiveService: ArchiveServiceProtocol {
         }
         guard !entry.sizeKnown || written == entry.size else { throw ArchiveError.corruptedArchive }
     }
-    private func inspectSource(_ url: URL, control: OperationControl, total: inout Int64) throws {
+    private func inspectSource(_ url: URL, excludeMacResources: Bool, control: OperationControl, total: inout Int64) throws {
         try control.check()
+        if excludeMacResources && CompressionPlanning.isMacResource(url) { return }
         let values = try url.resourceValues(forKeys: [.isSymbolicLinkKey, .isRegularFileKey, .isDirectoryKey, .fileSizeKey])
         guard values.isSymbolicLink != true else { throw ArchiveError.linksUnsupported }
         guard !url.lastPathComponent.contains("\n"), !url.lastPathComponent.contains("\r") else { throw ArchiveError.ambiguousListing }
         if values.isDirectory == true {
             for child in try FileManager.default.contentsOfDirectory(at: url, includingPropertiesForKeys: nil) {
-                try inspectSource(child, control: control, total: &total)
+                try inspectSource(child, excludeMacResources: excludeMacResources, control: control, total: &total)
             }
         } else {
             guard values.isRegularFile == true else { throw ArchiveError.linksUnsupported }
@@ -172,6 +206,22 @@ public struct ArchiveService: ArchiveServiceProtocol {
             guard total <= Int64.max - size else { throw ArchiveError.tooLarge }
             total += size
         }
+    }
+    private func validatedInput(_ archive: URL) throws -> URL {
+        guard let first = ArchiveFormat.firstVolume(archive) else { return archive }
+        let base = first.deletingPathExtension().lastPathComponent + "."
+        let siblings = try FileManager.default.contentsOfDirectory(at: first.deletingLastPathComponent(), includingPropertiesForKeys: [.isSymbolicLinkKey, .isRegularFileKey])
+        var indices = Set<Int>()
+        for file in siblings where file.lastPathComponent.hasPrefix(base) {
+            let suffix = String(file.lastPathComponent.dropFirst(base.count))
+            guard suffix.count >= 3, suffix.allSatisfy({ $0.isASCII && $0.isNumber }) else { continue }
+            guard let index = Int(suffix), (1...10_000).contains(index), suffix == String(format: "%03d", index) else { throw ArchiveError.missingVolume }
+            let values = try file.resourceValues(forKeys: [.isSymbolicLinkKey, .isRegularFileKey])
+            guard values.isSymbolicLink != true, values.isRegularFile == true else { throw ArchiveError.linksUnsupported }
+            indices.insert(index)
+        }
+        guard let last = indices.max(), indices.count == last, indices.contains(1) else { throw ArchiveError.missingVolume }
+        return first
     }
     private func makeStaging(in directory: URL) throws -> URL {
         let result = directory.appendingPathComponent(".LiteZip-" + UUID().uuidString, isDirectory: true)
