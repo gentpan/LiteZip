@@ -62,19 +62,19 @@ struct ArchiveTests {
         #expect(try Data(contentsOf: result.appendingPathComponent(source.lastPathComponent)) == Data(contentsOf: source))
         try f.assertClean()
     }
-    @Test("No overwrite on repeated output")
-    func collisions() async throws {
+    @Test("No overwrite on repeated output", arguments: [ArchiveFormat.zip, .tarGzip])
+    func collisions(format: ArchiveFormat) async throws {
         let f = try Fixture(); defer { f.close() }
         let file = try f.makeFile()
-        let desired = f.root.appendingPathComponent("archive.zip")
-        let first = try await f.service.compress(files: [file], destination: desired)
+        let desired = f.root.appendingPathComponent("archive." + format.suffix)
+        let first = try await f.service.compress(files: [file], destination: desired, options: .init(format: format))
         let before = try Data(contentsOf: first)
-        let second = try await f.service.compress(files: [file], destination: desired)
-        #expect(second.lastPathComponent == "archive 2.zip")
+        let second = try await f.service.compress(files: [file], destination: desired, options: .init(format: format))
+        #expect(second.lastPathComponent == "archive 2." + format.suffix)
         #expect(try Data(contentsOf: first) == before)
         let out = f.root.appendingPathComponent("out")
         _ = try await f.service.extract(archive: first, destination: out)
-        let out2 = try await f.service.extract(archive: first, destination: out)
+        let out2 = try await f.service.extract(archive: second, destination: out)
         #expect(out2.lastPathComponent == "out 2")
     }
     @Test("Malicious paths rejected", arguments: ["traversal.zip", "absolute.zip", "backslash.zip", "duplicate.zip", "newline.zip"])

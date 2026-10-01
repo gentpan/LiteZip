@@ -189,8 +189,9 @@ public struct ArchiveService: ArchiveServiceProtocol {
                 _ = FileManager.default.fileExists(atPath: source.path, isDirectory: &directory)
                 if directory.boolValue { candidate = proposed.deletingLastPathComponent().appendingPathComponent(proposed.lastPathComponent + " \(index)") }
                 else {
-                    let ext = proposed.pathExtension
-                    candidate = proposed.deletingLastPathComponent().appendingPathComponent(proposed.deletingPathExtension().lastPathComponent + " \(index)" + (ext.isEmpty ? "" : "." + ext))
+                    let stem = ArchiveFormat.baseName(proposed)
+                    let suffix = String(proposed.lastPathComponent.dropFirst(stem.count))
+                    candidate = proposed.deletingLastPathComponent().appendingPathComponent(stem + " \(index)" + suffix)
                 }
             }
             if renamex_np(source.path, candidate.path, UInt32(RENAME_EXCL)) == 0 { return candidate }
