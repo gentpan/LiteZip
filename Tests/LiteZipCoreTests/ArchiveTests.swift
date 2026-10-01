@@ -266,14 +266,28 @@ struct ArchiveTests {
     @Test("Engine progress arrives before exit")
     func progressDelivery() throws {
         let f = try Fixture(); defer { f.close() }
-        let script = try f.makeFile("progress.sh", contents: Data("#!/bin/sh\nprintf '50%%\\n'\n/bin/sleep 1\nprintf '100%%\\n'\n".utf8))
+        let script = try f.makeFile("progress.sh", contents: Data("""
+        #!/bin/sh
+        printf '50%%\\n'
+        attempts=0
+        while [ ! -f "$1" ]; do
+            [ "$attempts" -lt 200 ] || exit 1
+            /bin/sleep 0.05
+            attempts=$((attempts + 1))
+        done
+        printf '100%%\\n'
+
+        """.utf8))
         try FileManager.default.setAttributes([.posixPermissions: 0o755], ofItemAtPath: script.path)
-        var firstChunk: Date?
-        _ = try ProcessRunner(executable: script).run([], control: .init()) { _ in
-            if firstChunk == nil { firstChunk = Date() }
+        let acknowledgement = f.root.appendingPathComponent("received")
+        var text = ""
+        _ = try ProcessRunner(executable: script).run([acknowledgement.path], control: .init()) { data in
+            text += String(decoding: data, as: UTF8.self)
+            // The child cannot exit successfully until this callback receives its
+            // tiny progress message. This proves delivery without a timing guess.
+            if text.contains("50%") { try Data().write(to: acknowledgement) }
         }
-        #expect(firstChunk != nil)
-        #expect(Date().timeIntervalSince(firstChunk!) > 0.8)
+        #expect(text == "50%\n100%\n")
     }
     @Test("Cross-format path checks")
     func policy() throws {
