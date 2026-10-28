@@ -10,16 +10,34 @@ final class FinderSync: FIFinderSync {
         FIFinderSyncController.default().directoryURLs = [home, URL(fileURLWithPath: "/Volumes", isDirectory: true)]
         Logger(subsystem: "app.litezip.LiteZip", category: "Finder").info("Finder extension initialized")
     }
+    /// Common formats, in menu order. Raw values match LiteZipCore's ArchiveFormat.
+    private static let formats: [(title: String, id: String)] = [("ZIP", "zip"), ("7Z", "sevenZip"), ("TAR.GZ", "tarGzip"), ("RAR", "rar")]
+
     override func menu(for menuKind: FIMenuKind) -> NSMenu? {
         guard let urls = FIFinderSyncController.default().selectedItemURLs(), !urls.isEmpty else { return nil }
         let menu = NSMenu(title: "LiteZip")
-        add("使用 LiteZip 快速压缩", action: #selector(compress), to: menu)
-        add("压缩设置…", action: #selector(configure), to: menu)
         if urls.allSatisfy({ isArchive($0) }) {
-            menu.addItem(.separator())
-            add(urls.allSatisfy { $0.pathExtension.lowercased() == "dmg" } ? "在 Finder 打开磁盘映像" : "解压到独立文件夹", action: #selector(extract), to: menu)
+            let imagesOnly = urls.allSatisfy { $0.pathExtension.lowercased() == "dmg" }
+            add(imagesOnly ? "在 Finder 打开磁盘映像" : "解压到独立文件夹", action: #selector(extract), to: menu)
+            if !imagesOnly { add("解压到…", action: #selector(extractTo), to: menu) }
+            // Archives can still be packed again, one level down to keep the menu short.
+            let compress = NSMenuItem(title: "压缩为", action: nil, keyEquivalent: "")
+            compress.submenu = NSMenu(title: "压缩为")
+            addCompressionItems(to: compress.submenu!, prefix: "")
+            menu.addItem(compress)
+        } else {
+            addCompressionItems(to: menu, prefix: "压缩为 ")
         }
+        menu.addItem(.separator())
+        add("在 LiteZip 中打开…", action: #selector(openInApp), to: menu)
         return menu
+    }
+    private func addCompressionItems(to menu: NSMenu, prefix: String) {
+        for (index, format) in Self.formats.enumerated() {
+            let item = NSMenuItem(title: prefix + format.title, action: #selector(compress(_:)), keyEquivalent: "")
+            item.target = self; item.tag = index
+            menu.addItem(item)
+        }
     }
     private func isArchive(_ url: URL) -> Bool {
         if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { return false }
@@ -35,14 +53,19 @@ final class FinderSync: FIFinderSync {
         let item = NSMenuItem(title: title, action: action, keyEquivalent: "")
         item.target = self; menu.addItem(item)
     }
-    @objc private func compress() { send("compress") }
-    @objc private func configure() { send("configure") }
+    @objc private func compress(_ sender: NSMenuItem) {
+        guard Self.formats.indices.contains(sender.tag) else { return }
+        send("compress", format: Self.formats[sender.tag].id)
+    }
+    /// Opens the selection in the main window, where passwords and volumes can be set.
+    @objc private func openInApp() { send("open") }
     @objc private func extract() { send("extract") }
-    private func send(_ action: String) {
+    @objc private func extractTo() { send("extract-to") }
+    private func send(_ action: String, format: String? = nil) {
         guard let files = FIFinderSyncController.default().selectedItemURLs(), !files.isEmpty else { return }
         var url = URLComponents()
         url.scheme = "litezip"; url.host = action
-        url.queryItems = files.map { URLQueryItem(name: "file", value: $0.path) }
+        url.queryItems = (format.map { [URLQueryItem(name: "format", value: $0)] } ?? []) + files.map { URLQueryItem(name: "file", value: $0.path) }
         guard let target = url.url else { return }
         NSWorkspace.shared.open(target)
     }

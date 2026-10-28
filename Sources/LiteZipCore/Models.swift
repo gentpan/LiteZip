@@ -146,7 +146,7 @@ public struct ArchiveProgress: Sendable {
 public enum ArchiveError: Error, LocalizedError, Sendable, Equatable {
     case invalidArchive, corruptedArchive, wrongPassword, unsupportedFormat, missingVolume, diskFull, permissionDenied, cancelled
     case unsafePath, linksUnsupported, tooLarge, ambiguousListing, invalidInput, engineMissing, zipPasswordEncoding, invalidVolumeSize
-    case rarEngineMissing, invalidRAREngine, rarPasswordLength
+    case rarEngineMissing, invalidRAREngine, rarPasswordLength, rarDownloadFailed
     case diskImageMountRequired
     public var errorDescription: String? {
         switch self {
@@ -166,8 +166,9 @@ public enum ArchiveError: Error, LocalizedError, Sendable, Equatable {
         case .zipPasswordEncoding: "ZIP 加密支持不超过 99 个 ASCII 字符（英文、数字和符号）。中文或 Emoji 密码请选择 7Z 或 RAR。"
         case .invalidVolumeSize: "分卷大小应为 1 MB 到 1 TB，例如 100 MB 或 1.5 GB。仅 ZIP、7Z 和 RAR 支持分卷。"
         case .engineMissing: "内置压缩引擎缺失，请重新安装 LiteZip。"
-        case .rarEngineMissing: "创建 RAR 需要官方 RAR 引擎，请先在设置中连接本机的 rar 可执行文件。RAR 解压无需额外安装。"
-        case .invalidRAREngine: "请选择 RARLAB 官方 macOS 软件包中的 rar 可执行文件（RAR 7 或更新版本）。"
+        case .rarEngineMissing: "创建 RAR 需要官方 RAR 引擎，请在设置中下载官方引擎，或选择本机已有的 RAR 程序。RAR 解压无需额外安装。"
+        case .invalidRAREngine: "请选择 RARLAB 官方 macOS 软件包中的 RAR 程序（RAR 7 或更新版本）。"
+        case .rarDownloadFailed: "无法从 RARLAB 官网下载 RAR 引擎。请检查网络连接后重试，或打开官方下载页手动安装。"
         case .rarPasswordLength: "RAR 密码最多 127 个字符，部分 Emoji 占两个字符。请缩短密码后重试。"
         case .diskImageMountRequired: "DMG 请使用“在 Finder 打开”挂载，保留应用包的链接、权限和资源。"
         }

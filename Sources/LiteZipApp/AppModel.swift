@@ -33,8 +33,10 @@ final class AppPreferences: ObservableObject {
     @Published var revealResult: Bool { didSet { UserDefaults.standard.set(revealResult, forKey: "reveal") } }
     @Published var maximumGB: Int { didSet { UserDefaults.standard.set(maximumGB, forKey: "maximumGB") } }
     @Published var rarPath: String { didSet { UserDefaults.standard.set(rarPath, forKey: "rarPath") } }
+    @Published var checksForUpdates: Bool { didSet { UserDefaults.standard.set(checksForUpdates, forKey: "checksForUpdates") } }
     @Published var rarVersion = ""
     @Published var connectingRAR = false
+    @Published var downloadingRAR = false
     var rarURL: URL? { RAREngine.locate(configuredPath: rarPath) }
     init() {
         let defaults = UserDefaults.standard
@@ -47,6 +49,7 @@ final class AppPreferences: ObservableObject {
         revealResult = defaults.object(forKey: "reveal") as? Bool ?? true
         maximumGB = max(1, min(1000, defaults.object(forKey: "maximumGB") as? Int ?? 100))
         rarPath = defaults.string(forKey: "rarPath") ?? ""
+        checksForUpdates = defaults.object(forKey: "checksForUpdates") as? Bool ?? true
     }
 }
 
@@ -93,6 +96,8 @@ final class AppModel: ObservableObject {
     @Published var browserURL: URL?
     var chooseDestinationAfterBrowser = false
     var openMainWindow: (() -> Void)?
+    /// Counted by MainView so Finder actions do not open a second main window.
+    var visibleMainWindows = 0
     private var running = 0
     private var activePanel: NSSavePanel?
     private let logger = Logger(subsystem: "app.litezip.LiteZip", category: "Tasks")
@@ -161,7 +166,7 @@ final class AppModel: ObservableObject {
         let panel = NSOpenPanel()
         panel.title = "连接官方 RAR 引擎"; panel.prompt = "连接"
         panel.canChooseDirectories = false; panel.canChooseFiles = true; panel.allowsMultipleSelection = false
-        panel.message = "选择 RARLAB 官方 macOS 软件包内的 rar 文件。引擎留在原位置，请保留该软件包及许可文件。"
+        panel.message = "选择 RARLAB 官方 macOS 软件包内名为 rar 的程序。引擎留在原位置，请保留该软件包及许可文件。"
         present(panel, preferredWindow: NSApp.keyWindow) { [weak self] response in
             guard let self, response == .OK, let url = panel.url else { return }
             preferences.connectingRAR = true
@@ -171,6 +176,38 @@ final class AppModel: ObservableObject {
                     let version = try await RAREngine.version(at: url)
                     preferences.rarPath = url.path; preferences.rarVersion = version
                 } catch { errorMessage = ArchiveError.invalidRAREngine.localizedDescription }
+            }
+        }
+    }
+    /// Fetches the official package from rarlab.com after the user agrees to RARLAB's trial terms.
+    func downloadRAREngine(title: String = "下载 RAR 官方引擎？", confirmation: String = "下载", then next: (() -> Void)? = nil) {
+        guard !preferences.downloadingRAR else { return }
+        let alert = NSAlert()
+        alert.messageText = title
+        alert.informativeText = "LiteZip 将从 rarlab.com 下载 RARLAB 官方 macOS 软件包（约 1 MB），原样保存到 LiteZip 数据目录并自动连接。\n\nRAR 是共享软件，可免费试用 40 天，之后需向 RARLAB 购买许可。RAR 解压无需此引擎。"
+        alert.addButton(withTitle: confirmation); alert.addButton(withTitle: "取消"); alert.addButton(withTitle: "许可说明")
+        NSApp.activate(ignoringOtherApps: true)
+        switch alert.runModal() {
+        case .alertFirstButtonReturn: break
+        case .alertThirdButtonReturn: NSWorkspace.shared.open(URL(string: "https://www.rarlab.com/license.htm")!); return
+        default: return
+        }
+        preferences.downloadingRAR = true
+        Task {
+            defer { preferences.downloadingRAR = false }
+            do {
+                let engine = try await RARInstaller.downloadAndInstall()
+                // Automatic search checks LiteZip's own copy first.
+                preferences.rarPath = ""; preferences.rarVersion = engine.version
+                logger.info("Official RAR engine installed")
+                next?()
+            } catch {
+                logger.error("RAR engine download failed")
+                let failure = NSAlert()
+                failure.messageText = "未能下载 RAR 引擎"
+                failure.informativeText = error.localizedDescription
+                failure.addButton(withTitle: "好"); failure.addButton(withTitle: "打开官方下载页")
+                if failure.runModal() == .alertSecondButtonReturn { NSWorkspace.shared.open(URL(string: "https://www.rarlab.com/download.htm")!) }
             }
         }
     }
@@ -381,19 +418,50 @@ final class AppModel: ObservableObject {
     private func handleFinder(_ url: URL) {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false), let action = components.host else { return }
         let rawFiles = (components.queryItems ?? []).filter { $0.name == "file" }.compactMap { $0.value }.map { URL(fileURLWithPath: $0) }
-        let files = Array(NSOrderedSet(array: rawFiles.map { action == "extract" ? ArchiveFormat.firstVolume($0) ?? $0 : $0 })) as? [URL] ?? rawFiles
+        let files = Array(NSOrderedSet(array: rawFiles.map { action.hasPrefix("extract") ? ArchiveFormat.firstVolume($0) ?? $0 : $0 })) as? [URL] ?? rawFiles
         guard !files.isEmpty, files.count <= 1000 else { return }
         switch action {
         case "compress":
-            let name = files.count == 1 ? CompressionPlanning.name(for: files[0], format: preferences.defaultFormat) : "Archive." + preferences.defaultFormat.suffix
-            let level = preferences.level == .store && !preferences.defaultFormat.supportsStore ? CompressionLevel.normal : preferences.level
-            enqueue(files: files, destination: files[0].deletingLastPathComponent().appendingPathComponent(name), extracting: false, options: .init(format: preferences.defaultFormat, level: level))
+            let requested = components.queryItems?.first { $0.name == "format" }?.value.flatMap(ArchiveFormat.init(rawValue:))
+            compressFromFinder(files, format: requested.flatMap { $0.canCreate ? $0 : nil } ?? preferences.defaultFormat)
         case "extract":
             for file in files {
                 if ArchiveFormat.detect(file) == .dmg { openDiskImage(file) }
                 else { enqueue(files: [file], destination: file.deletingLastPathComponent().appendingPathComponent(ArchiveFormat.baseName(file)), extracting: true, options: .init()) }
             }
-        default: receive(files)
+        case "extract-to": chooseExtractionFolder(for: files)
+        default:
+            // "Open in LiteZip": the main window offers passwords, volumes and previews.
+            receive(files)
+            if visibleMainWindows == 0 { openMainWindow?() }
+        }
+    }
+    private func compressFromFinder(_ files: [URL], format: ArchiveFormat) {
+        if format == .rar && preferences.rarURL == nil {
+            downloadRAREngine(title: "创建 RAR 需要官方引擎", confirmation: "下载并压缩") { [weak self] in
+                guard let self, preferences.rarURL != nil else { return }
+                compressFromFinder(files, format: format)
+            }
+            return
+        }
+        let name = files.count == 1 ? CompressionPlanning.name(for: files[0], format: format) : "Archive." + format.suffix
+        let level = preferences.level == .store && !format.supportsStore ? CompressionLevel.normal : preferences.level
+        enqueue(files: files, destination: files[0].deletingLastPathComponent().appendingPathComponent(name), extracting: false, options: .init(format: format, level: level))
+    }
+    /// Finder's "解压到…" asks for a folder without changing the main window's selection.
+    private func chooseExtractionFolder(for archives: [URL]) {
+        for image in archives where ArchiveFormat.detect(image) == .dmg { openDiskImage(image) }
+        let inputs = archives.filter { ArchiveFormat.detect($0).map { $0 != .dmg } ?? false }
+        guard !inputs.isEmpty else { return }
+        let panel = NSOpenPanel()
+        panel.title = "选择解压位置"; panel.canChooseFiles = false; panel.canChooseDirectories = true; panel.canCreateDirectories = true
+        panel.prompt = "解压到此处"; panel.directoryURL = inputs[0].deletingLastPathComponent()
+        NSApp.activate(ignoringOtherApps: true)
+        present(panel, standalone: true) { [weak self] response in
+            guard let self, response == .OK, let directory = panel.url else { return }
+            for file in inputs {
+                enqueue(files: [file], destination: directory.appendingPathComponent(ArchiveFormat.baseName(file)), extracting: true, options: .init())
+            }
         }
     }
 }

@@ -20,13 +20,20 @@ struct MainView: View {
                         if model.format == .rar {
                             VStack(alignment: .leading, spacing: 8) {
                                 HStack {
-                                    Label(preferences.rarURL == nil ? "RAR 压缩需要连接官方引擎" : (preferences.rarVersion.isEmpty ? "已找到本机 RAR 引擎" : preferences.rarVersion + " 已连接"), systemImage: preferences.rarURL == nil ? "puzzlepiece.extension" : "checkmark.circle")
+                                    Label(preferences.rarURL == nil ? "RAR 压缩需要官方引擎" : (preferences.rarVersion.isEmpty ? "已找到本机 RAR 引擎" : preferences.rarVersion + " 已连接"), systemImage: preferences.rarURL == nil ? "puzzlepiece.extension" : "checkmark.circle")
                                     Spacer()
-                                    Button(preferences.connectingRAR ? "检查中…" : "连接引擎…", action: model.connectRAREngine).disabled(preferences.connectingRAR)
+                                    if preferences.rarURL == nil {
+                                        Button(preferences.downloadingRAR ? "下载中…" : "下载引擎") { model.downloadRAREngine() }
+                                            .buttonStyle(.borderedProminent)
+                                            .disabled(preferences.downloadingRAR || preferences.connectingRAR)
+                                        Button(preferences.connectingRAR ? "检查中…" : "选择…", action: model.connectRAREngine)
+                                            .disabled(preferences.downloadingRAR || preferences.connectingRAR)
+                                            .help("选择本机已安装的 RAR 程序")
+                                    }
                                 }
                                 HStack {
-                                    Text("RAR 解压已内置。官方压缩引擎可试用 40 天，之后需购买许可。")
-                                    Link("官方下载", destination: URL(string: "https://www.rarlab.com/download.htm")!)
+                                    Text("RAR 解压已内置。官方压缩引擎可试用 40 天，之后需向 RARLAB 购买许可。")
+                                    Link("许可说明", destination: URL(string: "https://www.rarlab.com/license.htm")!)
                                 }.font(.caption).foregroundStyle(.secondary)
                             }
                         }
@@ -76,7 +83,8 @@ struct MainView: View {
         }
         .background(Color(nsColor: .windowBackgroundColor))
         .preferredColorScheme(preferences.appearance.colorScheme)
-        .onAppear { model.openMainWindow = { openWindow(id: "main") } }
+        .onAppear { model.openMainWindow = { openWindow(id: "main") }; model.visibleMainWindows += 1 }
+        .onDisappear { model.visibleMainWindows = max(0, model.visibleMainWindows - 1) }
         .toolbar {
             if #available(macOS 26.0, *) {
                 modeToolbarItem.sharedBackgroundVisibility(.hidden)
@@ -110,8 +118,12 @@ struct MainView: View {
                                     Capsule().fill(.primary.opacity(0.12))
                                 }
                             }
+                            // A plain button only hits its drawn pixels. Without this the
+                            // unselected segment responds only over the text itself.
+                            .contentShape(Capsule())
                     }
                     .buttonStyle(.plain)
+                    .help(mode == .compress ? "压缩（⌘1）" : "解压（⌘2）")
                     .accessibilityAddTraits(model.mode == mode ? [.isSelected] : [])
                 }
             }
@@ -153,9 +165,12 @@ struct MainView: View {
                     .accessibilityLabel("压缩格式：" + model.format.title)
                     .help("选择压缩格式。TAR 仅打包；TAR.GZ、TAR.BZ2、TAR.XZ、TAR.ZST 会在打包后压缩。")
             } else {
-                Button(action: model.chooseFiles) { Label("选择压缩包", systemImage: "plus") }
+                Button(action: model.chooseFiles) {
+                    Label("选择压缩包", systemImage: "plus")
+                        .padding(.horizontal, 12).frame(height: 34)
+                        .contentShape(Capsule())
+                }
                     .buttonStyle(.plain)
-                    .padding(.horizontal, 12).frame(height: 34)
                     .modifier(ToolbarGlass())
             }
         }

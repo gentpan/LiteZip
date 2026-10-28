@@ -9,6 +9,7 @@
 /* Begin PBXBuildFile section */
 		01443A0D924C18D6A4D0B83A /* FinderSync.swift in Sources */ = {isa = PBXBuildFile; fileRef = 0EC6913B7859ACFFAFC599A0 /* FinderSync.swift */; };
 		29BA4D893D461514D0CFB55E /* Document-dmg.icns in Resources */ = {isa = PBXBuildFile; fileRef = 5EA964873029BFEC69F5D6F9 /* Document-dmg.icns */; };
+		2CEB35AA5351911769E177F7 /* UpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B61364465EEBAD4AA373A25 /* UpdateController.swift */; };
 		3EFF6D987CF12EB266A72EF5 /* Licenses in Resources */ = {isa = PBXBuildFile; fileRef = A99F99543B02A4B04399CE70 /* Licenses */; };
 		3F8668B2025968244C5389AD /* Document-gzip.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1C1DC47AB1AFB37BB4D8E136 /* Document-gzip.icns */; };
 		3F8EC5972F2E9ED8B46E830E /* Document-tarBzip2.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6A12B993307E9EF9063CCA8F /* Document-tarBzip2.icns */; };
@@ -82,6 +83,7 @@
 		523966E6CBF0EBF55AAE61B6 /* SettingsView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsView.swift; sourceTree = "<group>"; };
 		5605A8D30DB1284F17157F79 /* MainView.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MainView.swift; sourceTree = "<group>"; };
 		566B6612429758F32E497C05 /* AppModel.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = AppModel.swift; sourceTree = "<group>"; };
+		5B61364465EEBAD4AA373A25 /* UpdateController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = UpdateController.swift; sourceTree = "<group>"; };
 		5EA964873029BFEC69F5D6F9 /* Document-dmg.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-dmg.icns"; sourceTree = "<group>"; };
 		6A12B993307E9EF9063CCA8F /* Document-tarBzip2.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-tarBzip2.icns"; sourceTree = "<group>"; };
 		721D3A760DA2664E354A0234 /* Document-zip.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-zip.icns"; sourceTree = "<group>"; };
@@ -187,6 +189,7 @@
 				B76692A8C5AC8DE8A9D42E77 /* MenuBarController.swift */,
 				523966E6CBF0EBF55AAE61B6 /* SettingsView.swift */,
 				A6BCDFC52095C1E9CB331328 /* StatusItemDropTarget.swift */,
+				5B61364465EEBAD4AA373A25 /* UpdateController.swift */,
 			);
 			path = LiteZipApp;
 			sourceTree = "<group>";
@@ -313,11 +316,11 @@
 				};
 			};
 			buildConfigurationList = 9CF37FD8BF7E58E1250F345B /* Build configuration list for PBXProject "LiteZip" */;
-			developmentRegion = en;
+			developmentRegion = "zh-Hans";
 			hasScannedForEncodings = 0;
 			knownRegions = (
 				Base,
-				en,
+				"zh-Hans",
 			);
 			mainGroup = 7017CE778CB42CFBF602E353;
 			minimizedProjectReferenceProxies = 1;
@@ -409,6 +412,7 @@
 				53A9A88ACF7734EFEF423EAB /* MenuBarController.swift in Sources */,
 				D205AF9048D386CE9E33BD05 /* SettingsView.swift in Sources */,
 				B613E03DEE476F65F65DC909 /* StatusItemDropTarget.swift in Sources */,
+				2CEB35AA5351911769E177F7 /* UpdateController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
 		};

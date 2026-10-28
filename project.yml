@@ -3,6 +3,8 @@ options:
   deploymentTarget:
     macOS: '13.0'
   createIntermediateGroups: true
+  # The interface is written in Simplified Chinese; system menus and window titles follow it.
+  developmentLanguage: zh-Hans
 settings:
   base:
     SWIFT_VERSION: '6.0'
@@ -42,6 +44,7 @@ targets:
       path: Resources/Info.plist
       properties:
         CFBundleDisplayName: LiteZip
+        CFBundleLocalizations: [zh-Hans]
         CFBundleShortVersionString: '0.5.0'
         CFBundleVersion: '5'
         CFBundleIconFile: AppIcon
@@ -335,6 +338,7 @@ targets:
       path: FinderExtension/Info.plist
       properties:
         CFBundleDisplayName: LiteZip Finder
+        CFBundleLocalizations: [zh-Hans]
         CFBundleShortVersionString: '0.5.0'
         CFBundleVersion: '5'
         NSExtension:
