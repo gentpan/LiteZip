@@ -29,7 +29,7 @@ python3 -m http.server 4173 --bind 127.0.0.1 --directory dist
 
 反馈表单会将标题、描述、复现步骤和版本信息编码到 GitHub 新建 Issue 的链接中，由用户登录 GitHub 后确认发布；无需 GitHub Token 或反馈后端。较长内容提供复制正文入口，避免超出 URL 长度限制。关闭 JavaScript 时仍可通过页面入口直接在 GitHub 反馈。
 
-当前下载入口指向 GitHub 的 0.6.0 开发预览版。官网格式说明、更新日志与下载入口同步到该版本。
+当前下载入口指向 GitHub 的 0.6.1 开发预览版。官网格式说明、更新日志与下载入口同步到该版本。
 
 官网域名：`https://litezip.app/`，服务器：`166.0.22.243`。服务器使用 Caddy，站点配置为 `/etc/caddy/sites/litezip.app.caddy`，文件使用 `/var/www/litezip.app/releases/` 和 `current` 链接进行原子切换。HTTPS 证书由 Caddy 自动申请和续期，`www` 跳转到主域名。
 

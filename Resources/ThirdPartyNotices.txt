@@ -189,7 +189,7 @@ Build configuration and archive hashes: Vendor/README.md
 Additional standalone stream engines (unmodified upstream source):
 Lzip 1.26 - GPL 2 or later - https://www.nongnu.org/lzip/
 LZ4 1.10.0 - GPL 2 or later (CLI), BSD 2 clause (library) - https://github.com/lz4/lz4
-Brotli 1.2.0 - MIT - https://github.com/google/brotli
+Brotli 1.2.1 - MIT - https://github.com/google/brotli
 Snzip 1.0.5 - BSD 2 clause - https://github.com/kubo/snzip
 Snappy 1.2.2 - BSD 3 clause - https://github.com/google/snappy
 LRZIP 0.7.3 - GPL 2 or later, bundled component licenses in source - https://github.com/ckolivas/lrzip

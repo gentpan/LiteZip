@@ -14,7 +14,7 @@ fetch() {
 }
 fetch lzip-1.26.tar.gz 641cf30961525cbe3b340cc883436c8854e9f5032f459f444de4782b621e6572 https://download-mirror.savannah.gnu.org/releases/lzip/lzip-1.26.tar.gz
 fetch lz4-1.10.0.tar.gz 537512904744b35e232912055ccf8ec66d768639ff3abe5788d90d792ec5f48b https://github.com/lz4/lz4/archive/refs/tags/v1.10.0.tar.gz
-fetch brotli-1.2.0.tar.gz 816c96e8e8f193b40151dad7e8ff37b1221d019dbcb9c35cd3fadbfe6477dfec https://github.com/google/brotli/archive/refs/tags/v1.2.0.tar.gz
+fetch brotli-1.2.1.tar.gz 98d35d11a78dc453aebb7d10c3748f3f73ff78c8267c0dc697b8631f67bf7e8f https://github.com/google/brotli/archive/refs/tags/v1.2.1.tar.gz
 fetch snappy-1.2.2.tar.gz 90f74bc1fbf78a6c56b3c4a082a05103b3a56bb17bca1a27e052ea11723292dc https://github.com/google/snappy/archive/refs/tags/1.2.2.tar.gz
 fetch snzip-1.0.5.tar.gz fbb6b816619628f385b62f44a00a1603be157fba6ed2d30de490b0c5e645bff8 https://github.com/kubo/snzip/releases/download/v1.0.5/snzip-1.0.5.tar.gz
 fetch lzo-2.10.tar.gz c0f892943208266f9b6543b3ae308fab6284c5c90e627931446fb49b4221a072 https://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz
@@ -26,9 +26,9 @@ make -C "$work/lz4-1.10.0/lib" -j4 lib-release CFLAGS="$flags" LDFLAGS="$flags" 
 cp "$work/lz4-1.10.0/lib/liblz4.a" "$prefix/lib/"
 cp "$work/lz4-1.10.0/lib/"*.h "$prefix/include/"
 # Build the portable Brotli CLI from the upstream C sources, without host dylibs.
-clang $flags -DBROTLI_BUILD_PORTABLE -I"$work/brotli-1.2.0/c/include" \
-  "$work/brotli-1.2.0/c/common/"*.c "$work/brotli-1.2.0/c/enc/"*.c \
-  "$work/brotli-1.2.0/c/dec/"*.c "$work/brotli-1.2.0/c/tools/brotli.c" -lm -o "$work/brotli"
+clang $flags -DBROTLI_BUILD_PORTABLE -I"$work/brotli-1.2.1/c/include" \
+  "$work/brotli-1.2.1/c/common/"*.c "$work/brotli-1.2.1/c/enc/"*.c \
+  "$work/brotli-1.2.1/c/dec/"*.c "$work/brotli-1.2.1/c/tools/brotli.c" -lm -o "$work/brotli"
 # Snappy's public and private configure headers; use portable code on both CPUs.
 python3 - "$work/snappy-1.2.2" <<'PY'
 import pathlib,re,sys
@@ -56,7 +56,7 @@ done
 cp "$work/lzip-1.26/COPYING" Vendor/Formats/Licenses/lzip.txt
 cp "$work/lz4-1.10.0/lib/LICENSE" Vendor/Formats/Licenses/lz4.txt
 cp "$work/lz4-1.10.0/programs/COPYING" Vendor/Formats/Licenses/lz4-cli.txt
-cp "$work/brotli-1.2.0/LICENSE" Vendor/Formats/Licenses/brotli.txt
+cp "$work/brotli-1.2.1/LICENSE" Vendor/Formats/Licenses/brotli.txt
 cp "$work/snappy-1.2.2/COPYING" Vendor/Formats/Licenses/snappy.txt
 cp "$work/snzip-1.0.5/COPYING" Vendor/Formats/Licenses/snzip.txt
 cp "$work/lzo-2.10/COPYING" Vendor/Formats/Licenses/lzo.txt

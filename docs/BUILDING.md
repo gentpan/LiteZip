@@ -24,7 +24,7 @@ LITEZIP_RAR_TEST_ENGINE='/absolute/path/to/rar' swift test  # 可选官方 RAR �
 
 ## 签名与公证
 
-发布的 **0.6.0 已完成 Developer ID 签名与 Apple 公证**，ZIP 内的 App 已附上公证凭据。重新解包后，签名、公证凭据和 Gatekeeper 检查均通过。公证用于从 GitHub 等渠道分发，不代表上架 Mac App Store。
+发布的 **0.6.1 已完成 Developer ID 签名与 Apple 公证**，ZIP 内的 App 已附上公证凭据。重新解包后，签名、公证凭据和 Gatekeeper 检查均通过。公证用于从 GitHub 等渠道分发，不代表上架 Mac App Store。
 
 本机发布只需构建后执行签名脚本；它会自动提交公证、附上凭据、验证并打包：
 

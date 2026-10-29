@@ -94,3 +94,10 @@ ISO、SIT/SITX、CPIO/XAR/XIP 等放到后续兼容性批次。先根据真实�
 - RAR 一键下载：用户确认试用条款后，从 rarlab.com 下载页解析稳定版 macOS 软件包（跳过 beta），Apple 芯片使用 ARM 包，Intel 使用同版本 x64 包。软件包完整解压到 `~/Library/Application Support/LiteZip/Engines/RAR/`，保留许可文件；检查 `rar` 为普通可执行文件并通过官方版本输出验证后，才替换旧副本。LiteZip 不打包、不修改、不转发引擎，自动查找优先使用这份副本。
 - Finder 菜单直接提供 ZIP、7Z、TAR.GZ、RAR 四种常用格式；压缩包另有「解压到…」，并把再次压缩放在子菜单中，避免菜单过长。RAR 引擎缺失时提示下载，完成后继续压缩。
 - 检查更新使用 GitHub Releases API，不引入更新框架：只读取公开版本信息，所有版本均以预发布形式发布，因此预发布也计入；提示框只链接到发布页，由用户自行下载。自动检查默认开启，每天最多一次，可在设置中关闭。
+
+## 0.6.1：Brotli 安全升级
+
+- Issue #2 指出 Brotli 1.2.0 存在漏洞。上游 1.2.1 的发布说明记录 `CVE-2026-111497`（越界写入，可导致远程代码执行）。LiteZip 用该引擎解压用户提供的 `.br` 文件，属于不可信输入路径，因此单独发布安全更新。
+- 只改 `Scripts/build-format-engines.sh` 中的版本号与 SHA-256：1.2.1 的源码布局和编译参数（`-DBROTLI_BUILD_PORTABLE`，`c/common`、`c/enc`、`c/dec`、`c/tools/brotli.c`）与 1.2.0 一致，重建后仍只链接 `libSystem`。
+- 1.2.1 的 LICENSE 与 1.2.0 逐字节相同，`Vendor/Formats/Licenses/brotli.txt` 不变；随包源码换成 `brotli-1.2.1.tar.gz`，第三方声明与 `Vendor/Formats/README.md` 同步版本。
+- 引擎调用参数未变（压缩 `-c -q <level> --`，解压 `-d -c --`），`StandaloneFormats.swift` 无需修改。

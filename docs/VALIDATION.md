@@ -116,3 +116,15 @@
 - 对最终 ZIP 重新解包，严格签名、公证凭据及 Gatekeeper 检查均通过，来源 `Notarized Developer ID`。
 - 最终 ZIP 大小 38,056,900 字节，SHA-256：`156801e1bbb10aec504bec4a92508a8c36e57888015396d07b69bdd7162ff994`。
 - 未实际验证：Finder 右键新菜单在已安装 App 中的显示与操作；从 rarlab.com 实际下载并运行官方 RAR 引擎（仅用模拟软件包验证安装流程，下载页解析按官网当前页面验证）。本次保持开发预览标记。
+
+## 0.6.1 发布验证
+
+- Release 通用构建成功，主程序与 Finder 扩展同时包含 arm64 与 x86_64，Info.plist 为 0.6.1（build 7）。
+- 核心测试 49 项、8 组全部通过；菜单栏拖放输入检查与发布脚本 4 组检查通过。
+- 内置 Brotli 引擎 `--version` 输出 1.2.1，`lipo` 为 x86_64 + arm64，`otool -L` 只依赖 `/usr/lib/libSystem.B.dylib`；用 App 实际参数（`-c -q 11 --`、`-d -c --`）对随机数据与文本压缩解压，字节比对一致。
+- 源码包 SHA-256 校验通过：`98d35d11a78dc453aebb7d10c3748f3f73ff78c8267c0dc697b8631f67bf7e8f`。
+- Apple 公证提交 `ea0a0269-df71-4426-8527-f22ec1e21bf9` 返回 `Accepted`，日志 issues 为 null；`stapler staple` 与 `validate` 通过。
+- 对最终 ZIP 重新解包，严格签名、公证凭据及 Gatekeeper 检查均通过，来源 `Notarized Developer ID`，签名机构 `Developer ID Application: GiantAccel, LLC (WPDUNPG5N8)`。
+- 最终 ZIP 大小 38,058,344 字节，SHA-256：`ebcf40669b7ef5866105cbbaef00f5dd706568f01d77a73b19464bcd71a8ffef`。
+- 包内 `ThirdPartyNotices.txt`、`README.md` 与 `SourcePackages` 均对应 Brotli 1.2.1。
+- 未实际验证：Finder 右键菜单在已安装 App 中的显示与操作；RAR 官方引擎的实际下载与运行。本次保持开发预览标记。

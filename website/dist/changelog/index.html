@@ -22,9 +22,14 @@
       <a class="text-link" href="https://github.com/gentpan/LiteZip/releases" target="_blank" rel="noopener">查看全部 GitHub Releases ↗</a>
     </section>
     <div class="changelog-layout wrap">
-      <aside class="release-sidebar"><nav aria-label="版本导航"><p class="feature-number">版本记录</p><a href="#v0-6-0"><span>0.6.0</span><span>开发预览</span></a><a href="#v0-5-0"><span>0.5.0</span><span>开发预览</span></a><a href="#v0-4-0"><span>0.4.0</span><span>开发预览</span></a><a href="#v0-3-0"><span>0.3.0</span><span>开发预览</span></a><a href="#v0-2-0"><span>0.2.0</span><span>开发预览</span></a><a href="#v0-1-0"><span>0.1.0</span><span>开发预览</span></a></nav><p>发现问题，或有新的想法？<br><a class="text-link" href="/feedback/">告诉我们 →</a></p></aside>
-      <section class="release-list" aria-label="更新日志"><article class="release" id="v0-6-0" aria-labelledby="v0-6-0-title">
-          <div class="release-heading"><div><p class="release-channel">开发预览</p><h2 id="v0-6-0-title">0.6.0 <span class="release-badge">最新记录</span></h2></div><a class="text-link" href="https://github.com/gentpan/LiteZip/releases/tag/v0.6.0" target="_blank" rel="noopener">GitHub 发布说明 ↗</a></div>
+      <aside class="release-sidebar"><nav aria-label="版本导航"><p class="feature-number">版本记录</p><a href="#v0-6-1"><span>0.6.1</span><span>开发预览</span></a><a href="#v0-6-0"><span>0.6.0</span><span>开发预览</span></a><a href="#v0-5-0"><span>0.5.0</span><span>开发预览</span></a><a href="#v0-4-0"><span>0.4.0</span><span>开发预览</span></a><a href="#v0-3-0"><span>0.3.0</span><span>开发预览</span></a><a href="#v0-2-0"><span>0.2.0</span><span>开发预览</span></a><a href="#v0-1-0"><span>0.1.0</span><span>开发预览</span></a></nav><p>发现问题，或有新的想法？<br><a class="text-link" href="/feedback/">告诉我们 →</a></p></aside>
+      <section class="release-list" aria-label="更新日志"><article class="release" id="v0-6-1" aria-labelledby="v0-6-1-title">
+          <div class="release-heading"><div><p class="release-channel">开发预览</p><h2 id="v0-6-1-title">0.6.1 <span class="release-badge">最新记录</span></h2></div><a class="text-link" href="https://github.com/gentpan/LiteZip/releases/tag/v0.6.1" target="_blank" rel="noopener">GitHub 发布说明 ↗</a></div>
+          <p class="release-note">安全更新，对应 GitHub Issue #2：</p>
+<ul><li>Brotli 引擎由 1.2.0 升级到 1.2.1，修复上游 CVE-2026-111497（越界写入，可能导致远程代码执行）。该引擎用于 <code>.br</code>／<code>.brotli</code> 单文件压缩与解压。</li><li>构建脚本固定新版本的下载地址与 SHA-256，随包源码与第三方声明同步更新；引擎仍为只链接系统库的 arm64／x86_64 通用构建。</li><li>其余功能与 0.6.0 一致，无界面变化。</li></ul>
+<p class="release-note">Developer ID 签名与 Apple 公证已完成，App 已附上公证凭据，Gatekeeper 验证通过。macOS 13+，Apple Silicon／Intel 通用构建。</p>
+        </article><article class="release" id="v0-6-0" aria-labelledby="v0-6-0-title">
+          <div class="release-heading"><div><p class="release-channel">开发预览</p><h2 id="v0-6-0-title">0.6.0 </h2></div><a class="text-link" href="https://github.com/gentpan/LiteZip/releases/tag/v0.6.0" target="_blank" rel="noopener">GitHub 发布说明 ↗</a></div>
           <p class="release-note">根据 GitHub Issue #1 的反馈调整：</p>
 <ul><li>菜单栏、设置窗口标题等系统文字统一为简体中文；移除隐藏工具栏、查找、拼写、窗口标签页等无效菜单项，帮助菜单改为官网、更新记录与反馈入口。</li><li>「压缩包」菜单新增压缩／解压切换（⌘1／⌘2）；标题栏切换按钮整块可点，不再只响应文字区域。</li><li>格式名称统一为大写（ZIP、7Z、RAR 等）。</li><li>设置中可一键下载 RAR 官方引擎：从 rarlab.com 获取官方软件包，原样保存到 LiteZip 数据目录并自动连接；仍可手动选择本机 RAR 程序。</li><li>Finder 右键菜单改为「压缩为 ZIP／7Z／TAR.GZ／RAR」，压缩包增加「解压到…」；原「压缩设置…」改名为「在 LiteZip 中打开…」，用于加密、分卷等更多选项。</li><li>新增检查更新：读取 GitHub 发布的版本，可在 LiteZip 菜单手动检查，或在设置中开启每日自动检查。</li></ul>
 <p class="release-note">Developer ID 签名与 Apple 公证已完成，App 已附上公证凭据，Gatekeeper 验证通过。macOS 13+，Apple Silicon／Intel 通用构建。</p>
