@@ -31,6 +31,6 @@ python3 -m http.server 4173 --bind 127.0.0.1 --directory dist
 
 当前下载入口指向 GitHub 的 0.6.0 开发预览版。官网格式说明、更新日志与下载入口同步到该版本。
 
-官网域名：`https://litezip.app/`，服务器：`51.38.126.148`。服务器使用 Caddy，站点配置为 `/etc/caddy/sites/litezip.app.caddy`，文件使用 `/var/www/litezip.app/releases/` 和 `current` 链接进行原子切换。HTTPS 证书由 Caddy 自动申请和续期，`www` 跳转到主域名。
+官网域名：`https://litezip.app/`，服务器：`166.0.22.243`。服务器使用 Caddy，站点配置为 `/etc/caddy/sites/litezip.app.caddy`，文件使用 `/var/www/litezip.app/releases/` 和 `current` 链接进行原子切换。HTTPS 证书由 Caddy 自动申请和续期，`www` 跳转到主域名。
 
 重新部署：`bash deploy/deploy-server.sh`。默认使用桌面的 `gentpan.pem` 和 SSH 22 端口；可以用 `LITEZIP_DEPLOY_KEY`、`LITEZIP_DEPLOY_HOST`、`LITEZIP_DEPLOY_PORT` 覆盖。私钥不进入代码仓库或上传到服务器。配置验证或重载失败时脚本会恢复旧配置与站点链接。

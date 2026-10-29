@@ -2,7 +2,7 @@
 set -euo pipefail
 site_root="$(cd "$(dirname "$0")/.." && pwd)"
 deploy_key="${LITEZIP_DEPLOY_KEY:-$HOME/Desktop/gentpan.pem}"
-deploy_host="${LITEZIP_DEPLOY_HOST:-root@51.38.126.148}"
+deploy_host="${LITEZIP_DEPLOY_HOST:-root@166.0.22.243}"
 deploy_port="${LITEZIP_DEPLOY_PORT:-22}"
 release_id="$(date -u +%Y%m%dT%H%M%SZ)-$(shasum -a 256 "$site_root/dist/index.html" | cut -c1-8)"
 test -f "$deploy_key"
