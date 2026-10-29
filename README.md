@@ -4,7 +4,7 @@
 
 **macOS 13+ · 支持 Apple Silicon 和 Intel**
 
-[官网](https://litezip.app/) · [下载](https://github.com/gentpan/LiteZip/releases/tag/v0.5.0) · [用户反馈](https://litezip.app/feedback/) · [更新日志](https://litezip.app/changelog/)
+[官网](https://litezip.app/) · [下载](https://github.com/gentpan/LiteZip/releases/tag/v0.6.0) · [用户反馈](https://litezip.app/feedback/) · [更新日志](https://litezip.app/changelog/)
 
 ![LiteZip 界面](docs/screenshots/light.png)
 
@@ -20,11 +20,11 @@
 
 ## 安装
 
-1. 在[下载页面](https://github.com/gentpan/LiteZip/releases/tag/v0.5.0)获取 ZIP 安装包。
+1. 在[下载页面](https://github.com/gentpan/LiteZip/releases/tag/v0.6.0)获取 ZIP 安装包。
 2. 解压后，将 `LiteZip.app` 拖入「应用程序」。
 3. 打开 LiteZip，即可开始使用。
 
-当前版本为 **0.5.0 开发预览版**，下载包已完成 Developer ID 签名与 Apple 公证。
+当前版本为 **0.6.0 开发预览版**，下载包已完成 Developer ID 签名与 Apple 公证。
 
 ## 怎么使用
 

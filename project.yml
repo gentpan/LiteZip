@@ -9,8 +9,8 @@ settings:
   base:
     SWIFT_VERSION: '6.0'
     MACOSX_DEPLOYMENT_TARGET: '13.0'
-    MARKETING_VERSION: '0.5.0'
-    CURRENT_PROJECT_VERSION: '5'
+    MARKETING_VERSION: '0.6.0'
+    CURRENT_PROJECT_VERSION: '6'
     CODE_SIGN_STYLE: Manual
     ENABLE_HARDENED_RUNTIME: YES
     ARCHS: 'arm64 x86_64'
@@ -45,8 +45,8 @@ targets:
       properties:
         CFBundleDisplayName: LiteZip
         CFBundleLocalizations: [zh-Hans]
-        CFBundleShortVersionString: '0.5.0'
-        CFBundleVersion: '5'
+        CFBundleShortVersionString: '0.6.0'
+        CFBundleVersion: '6'
         CFBundleIconFile: AppIcon
         CFBundleIconName: AppIcon
         LSMinimumSystemVersion: '13.0'
@@ -339,8 +339,8 @@ targets:
       properties:
         CFBundleDisplayName: LiteZip Finder
         CFBundleLocalizations: [zh-Hans]
-        CFBundleShortVersionString: '0.5.0'
-        CFBundleVersion: '5'
+        CFBundleShortVersionString: '0.6.0'
+        CFBundleVersion: '6'
         NSExtension:
           NSExtensionAttributes: {}
           NSExtensionPointIdentifier: com.apple.FinderSync
