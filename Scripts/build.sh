@@ -13,13 +13,15 @@ test -s build/LiteZip.app/Contents/Resources/AppIcon.icns
 test -s build/LiteZip.app/Contents/Resources/Assets.car
 cp build/LiteZip.app/Contents/Resources/AppIcon.icns Resources/AppIcon.icns
 test -f build/LiteZip.app/Contents/Resources/ThirdPartyNotices.txt
-for engine in lzip lz4 brotli lrzip snzip; do
+for engine in lzip lz4 brotli lrzip snzip lzop; do
   test -x "build/LiteZip.app/Contents/Resources/Engine/$engine"
   archs="$(lipo "build/LiteZip.app/Contents/Resources/Engine/$engine" -archs)"
   [[ " $archs " == *' arm64 '* && " $archs " == *' x86_64 '* ]]
 done
 test -f build/LiteZip.app/Contents/Resources/Licenses/lrzip.txt
 test -f build/LiteZip.app/Contents/Resources/SourcePackages/lrzip-0.7.3.tar.xz
+test -f build/LiteZip.app/Contents/Resources/Licenses/lzop.txt
+test -f build/LiteZip.app/Contents/Resources/SourcePackages/lzop-1.04.tar.gz
 
 test "$(/usr/libexec/PlistBuddy -c 'Print :NSExtension:NSExtensionPointIdentifier' build/LiteZip.app/Contents/PlugIns/LiteZipFinder.appex/Contents/Info.plist)" = 'com.apple.FinderSync'
 test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' build/LiteZip.app/Contents/Info.plist)" = '0.6.1'

@@ -69,6 +69,16 @@ public enum RARInstaller {
         return path.flatMap { URL(string: "https://www.rarlab.com" + $0) }
     }
 
+    /// Version digits of the newest stable package, e.g. 713 for rarmacos-arm-713.tar.gz.
+    public static func latestVersionNumber(architecture: Architecture = .current) async throws -> Int? {
+        let page: Data
+        do { page = try await Network.data(from: downloadPage, limit: 4 * 1_024 * 1_024) }
+        catch { throw ArchiveError.rarDownloadFailed }
+        let html = String(decoding: page, as: UTF8.self)
+        guard let url = packageURL(inDownloadPage: html, architecture: architecture) else { throw ArchiveError.rarDownloadFailed }
+        return url.lastPathComponent.split(separator: "-").last.flatMap { Int($0.split(separator: ".").first ?? "") }
+    }
+
     public static func downloadAndInstall(into directory: URL = RAREngine.managedDirectory, architecture: Architecture = .current) async throws -> (executable: URL, version: String) {
         let package: Data
         do {

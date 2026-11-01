@@ -1,7 +1,9 @@
 # Archive formats
 
-LiteZip now creates 21 formats, with ZIPX additionally available for extraction.
-All create formats have named color badges in the main window and menu-bar panel.
+LiteZip opens every format below. Since 0.6.2 the creation menu offers only ZIP, 7Z,
+RAR, the TAR family, DMG and ISO; the single-file stream formats, AAR, WIM, ZIPX and
+the legacy formats are extract-only. All formats have named color badges in the main
+window and menu-bar panel.
 
 | Format | Extension | Creation and extraction |
 | --- | --- | --- |
@@ -16,6 +18,13 @@ All create formats have named color badges in the main window and menu-bar panel
 | DMG | .dmg | Native image creation and read-only preview; mount in Finder for filesystem semantics |
 | ISO | .iso | ISO9660 / Joliet / UDF hybrid image creation, preview and extraction; no compression or encryption |
 | ZIPX | .zipx | Extraction of methods supported by bundled 7-Zip |
+| CAB, CPIO, LHA | .cab, .cpio, .lzh / .lha | Extract only; multiple files and folders through bundled 7-Zip. LHA symbolic links (stored as `name\|target`) are rejected |
+| LZMA, Z | .lzma, .Z | Extract only; one stream through bundled 7-Zip, output named after the archive. `.Z` has no length or checksum, so a truncated stream cannot be detected |
+| LZOP | .lzo | Extract only; one stream through bundled lzop 1.04 (GPL 2+, built from the unmodified source) |
+
+`.pkg`/`.xip` (XAR), `.deb` and `.rpm` are deliberately not claimed: bundled 7-Zip
+opens them one level too deep and returns only the inner payload blob (for a real
+`.pkg`, a single `Payload~`), and non-ASCII names in XAR come back as base64.
 
 Single-file formats reject folders and multiple inputs. “分别压缩” makes one
 stream per regular file. They have no password or split-volume controls.

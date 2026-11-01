@@ -20,21 +20,18 @@ final class FinderSync: FIFinderSync {
             let imagesOnly = urls.allSatisfy { $0.pathExtension.lowercased() == "dmg" }
             add(imagesOnly ? "在 Finder 打开磁盘映像" : "解压到独立文件夹", action: #selector(extract), to: menu)
             if !imagesOnly { add("解压到…", action: #selector(extractTo), to: menu) }
-            // Archives can still be packed again, one level down to keep the menu short.
-            let compress = NSMenuItem(title: "压缩为", action: nil, keyEquivalent: "")
-            compress.submenu = NSMenu(title: "压缩为")
-            addCompressionItems(to: compress.submenu!, prefix: "")
-            menu.addItem(compress)
-        } else {
-            addCompressionItems(to: menu, prefix: "压缩为 ")
         }
-        menu.addItem(.separator())
+        // Same-kind format items live one level down; no separator before "open".
+        let compress = NSMenuItem(title: "压缩为", action: nil, keyEquivalent: "")
+        compress.submenu = NSMenu(title: "压缩为")
+        addCompressionItems(to: compress.submenu!)
+        menu.addItem(compress)
         add("在 LiteZip 中打开…", action: #selector(openInApp), to: menu)
         return menu
     }
-    private func addCompressionItems(to menu: NSMenu, prefix: String) {
+    private func addCompressionItems(to menu: NSMenu) {
         for (index, format) in Self.formats.enumerated() {
-            let item = NSMenuItem(title: prefix + format.title, action: #selector(compress(_:)), keyEquivalent: "")
+            let item = NSMenuItem(title: format.title, action: #selector(compress(_:)), keyEquivalent: "")
             item.target = self; item.tag = index
             menu.addItem(item)
         }
@@ -42,7 +39,7 @@ final class FinderSync: FIFinderSync {
     private func isArchive(_ url: URL) -> Bool {
         if (try? url.resourceValues(forKeys: [.isDirectoryKey]).isDirectory) == true { return false }
         let ext = url.pathExtension.lowercased()
-        if ["zip", "zipx", "7z", "rar", "tar", "gz", "gzip", "tgz", "bz2", "bzip2", "xz", "zst", "zstd", "tbz", "tbz2", "txz", "tzst", "lz", "lzip", "lz4", "br", "brotli", "lrz", "lrzip", "aar", "sz", "snappy", "wim", "dmg", "iso"].contains(ext) { return true }
+        if ["zip", "zipx", "7z", "rar", "tar", "gz", "gzip", "tgz", "bz2", "bzip2", "xz", "zst", "zstd", "tbz", "tbz2", "txz", "tzst", "lz", "lzip", "lz4", "br", "brotli", "lrz", "lrzip", "aar", "sz", "snappy", "wim", "dmg", "iso", "cab", "cpio", "lzh", "lha", "lzma", "z", "lzo", "lzop"].contains(ext) { return true }
         if ext.count >= 3, let letter = ext.first, let ascii = letter.asciiValue,
            (114...122).contains(ascii), ext.dropFirst().allSatisfy({ $0.isASCII && $0.isNumber }),
            let index = Int(ext.dropFirst()), (letter == "z" ? index > 0 : ext.count == 3) { return true }

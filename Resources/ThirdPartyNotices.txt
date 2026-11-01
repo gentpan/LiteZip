@@ -143,11 +143,11 @@ The license for original unRAR code has the following restriction:
 
 --
 
-LiteZip bundles the unmodified universal macOS 7zz executable from 7-Zip 26.03.
+LiteZip bundles the unmodified universal macOS 7zz executable from 7-Zip 26.05.
 Copyright (c) 1999-2026 Igor Pavlov.
 Official distribution: https://www.7-zip.org/download.html
-Corresponding source: https://github.com/ip7z/7zip/tree/26.03
-Source archive: https://github.com/ip7z/7zip/releases/download/26.03/7z2603-src.tar.xz
+Corresponding source: https://github.com/ip7z/7zip/tree/26.05
+Source archive: https://github.com/ip7z/7zip/releases/download/26.05/7z2605-src.tar.xz
 The 7zz engine is a separate executable and may be replaced by a compatible build.
 LiteZip itself is licensed under the MIT license.
 BSD License
@@ -194,6 +194,7 @@ Snzip 1.0.5 - BSD 2 clause - https://github.com/kubo/snzip
 Snappy 1.2.2 - BSD 3 clause - https://github.com/google/snappy
 LRZIP 0.7.3 - GPL 2 or later, bundled component licenses in source - https://github.com/ckolivas/lrzip
 LZO 2.10 - GPL 2 or later - https://www.oberhumer.com/opensource/lzo/
+LZOP 1.04 - GPL 2 or later - https://www.lzop.org/
 Complete license texts are in Contents/Resources/Licenses.
 Corresponding source archives are in Contents/Resources/SourcePackages.
 Reproducible build configuration and SHA-256 values: Scripts/build-format-engines.sh

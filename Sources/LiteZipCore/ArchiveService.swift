@@ -30,6 +30,8 @@ public struct ArchiveService: ArchiveServiceProtocol {
         let streamFormat = ArchiveFormat.detect(archive)
         let fallback = streamFormat?.singleFileOnly == true || streamFormat?.tarCompression != nil ? ArchiveFormat.baseName(archive) : nil
         let entries = try ArchiveSafety.parseListing(text, fallbackPath: fallback)
+        // LHA stores a symbolic link as "name|target"; 7-Zip reports it as an ordinary path.
+        if streamFormat == .lzh, entries.contains(where: { $0.path.contains("|") }) { throw ArchiveError.linksUnsupported }
         _ = try ArchiveSafety.validate(entries: entries, maximumBytes: maximumExtractedBytes)
         return entries
     }

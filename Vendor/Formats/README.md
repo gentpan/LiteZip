@@ -19,7 +19,8 @@ the project's `build/format-engines` directory. It does not install host tools.
 | snzip | 1.0.5 | https://github.com/kubo/snzip/releases/tag/v1.0.5 | BSD 2 clause |
 | snappy (snzip dependency) | 1.2.2 | https://github.com/google/snappy/tree/1.2.2 | BSD 3 clause |
 | lrzip | 0.7.3 | https://github.com/ckolivas/lrzip/releases/tag/v0.7.3 | GPL 2+; bundled components as documented in source |
-| lzo (lrzip dependency) | 2.10 | https://www.oberhumer.com/opensource/lzo/ | GPL 2+ |
+| lzo (lrzip and lzop dependency) | 2.10 | https://www.oberhumer.com/opensource/lzo/ | GPL 2+ |
+| lzop | 1.04 | https://www.lzop.org/download/lzop-1.04.tar.gz | GPL 2+ |
 
 7-Zip handles WIM without additional dependencies. ISO and Apple Archive use
 macOS system components rather than downloaded tools.

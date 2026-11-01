@@ -38,14 +38,14 @@ struct ArchiveBrowserView: View {
                 if ArchiveFormat.detect(url) == .iso {
                     Button("在 Finder 挂载") { model.openDiskImage(url) }
                 }
-                Button(ArchiveFormat.detect(url) == .dmg ? "在 Finder 打开" : "解压…") {
+                Button(ArchiveFormat.detect(url) == .dmg ? "在 Finder 打开" : "解压") {
                     if ArchiveFormat.detect(url) == .dmg { model.openDiskImage(url); dismiss(); return }
-                    model.receive([url]); model.mode = .extract; model.password = password
-                    model.chooseDestinationAfterBrowser = true; dismiss()
+                    model.extractNow([url], password: password.isEmpty ? nil : password)
+                    dismiss()
                 }.buttonStyle(.borderedProminent)
             }
         }.padding(24).frame(width: 720, height: 520)
-        .onAppear { password = model.password; load(test: false) }
+        .onAppear { load(test: false) }
         .onDisappear { control.cancel(); password = "" }
     }
     private func load(test: Bool) {

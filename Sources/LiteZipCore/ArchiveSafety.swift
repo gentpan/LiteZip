@@ -53,7 +53,9 @@ public enum ArchiveSafety {
         var entries = [ArchiveEntry](), fields = [String: String]()
         func append() throws {
             guard !fields.isEmpty else { return }
-            guard let path = fields["Path"] ?? fallbackPath, let rawSize = fields["Size"] else { throw ArchiveError.ambiguousListing }
+            // Nameless single streams (e.g. .Z) list no Path and no Size; the caller's fallback name stands in.
+            let nameless = fields["Path"] == nil && fallbackPath != nil
+            guard let path = fields["Path"] ?? fallbackPath, let rawSize = fields["Size"] ?? (nameless ? "" : nil) else { throw ArchiveError.ambiguousListing }
             let attributes = fields["Attributes"] ?? ""
             let mode = fields["Mode"] ?? attributes.split(separator: " ").last.map(String.init) ?? ""
             let isDirectory = fields["Folder"] == "+" || attributes.hasPrefix("D") || mode.hasPrefix("d")

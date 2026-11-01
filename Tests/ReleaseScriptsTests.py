@@ -59,7 +59,7 @@ class ReleaseScriptsTests(unittest.TestCase):
             'CFBundleIdentifier': 'test.release',
         }))
         # Include every bundled executable so adding engines cannot silently skip signing.
-        self.engines = ('7zz', 'zstd', 'lzip', 'lz4', 'brotli', 'lrzip', 'snzip')
+        self.engines = ('7zz', 'zstd', 'lzip', 'lz4', 'brotli', 'lrzip', 'snzip', 'lzop')
         engine_dir = contents / 'Resources' / 'Engine'
         engine_dir.mkdir(parents=True)
         for name in self.engines:

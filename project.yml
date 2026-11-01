@@ -28,6 +28,8 @@ targets:
         buildPhase: resources
       - path: Resources/DocumentTypes
         buildPhase: resources
+      - path: Resources/FormatIcons
+        buildPhase: resources
       - path: Resources/ThirdPartyNotices.txt
         buildPhase: resources
       - path: Vendor/Formats/Licenses
@@ -176,6 +178,11 @@ targets:
             CFBundleTypeIconFile: AppIcon.icns
             CFBundleTypeExtensions: ['sz', 'snappy']
             LSItemContentTypes: ['org.snappy.sz-archive']
+          - CFBundleTypeName: LiteZip Legacy Archive
+            CFBundleTypeRole: Viewer
+            LSHandlerRank: Alternate
+            CFBundleTypeIconFile: AppIcon.icns
+            CFBundleTypeExtensions: ['cab', 'cpio', 'lzh', 'lha', 'lzma', 'z', 'lzo', 'lzop']
           - CFBundleTypeName: LiteZip DMG Archive
             CFBundleTypeRole: Viewer
             LSHandlerRank: Alternate

@@ -19,6 +19,7 @@ fetch snappy-1.2.2.tar.gz 90f74bc1fbf78a6c56b3c4a082a05103b3a56bb17bca1a27e052ea
 fetch snzip-1.0.5.tar.gz fbb6b816619628f385b62f44a00a1603be157fba6ed2d30de490b0c5e645bff8 https://github.com/kubo/snzip/releases/download/v1.0.5/snzip-1.0.5.tar.gz
 fetch lzo-2.10.tar.gz c0f892943208266f9b6543b3ae308fab6284c5c90e627931446fb49b4221a072 https://www.oberhumer.com/opensource/lzo/download/lzo-2.10.tar.gz
 fetch lrzip-0.7.3.tar.xz 6928862de7c4bbb3cfbcd12fae9fd0a7d230d5bbf27486e52c4de60717ebfdbb https://github.com/ckolivas/lrzip/releases/download/v0.7.3/lrzip-0.7.3.tar.xz
+fetch lzop-1.04.tar.gz 7e72b62a8a60aff5200a047eea0773a8fb205caf7acbe1774d95147f305a2f41 https://www.lzop.org/download/lzop-1.04.tar.gz
 (cd "$work/lzip-1.26"; ./configure "CXXFLAGS=$flags" "LDFLAGS=$flags"; make -j4)
 make -C "$work/lz4-1.10.0/lib" clean
 make -C "$work/lz4-1.10.0" -j4 lz4 CFLAGS="$flags" LDFLAGS="$flags" BUILD_SHARED=no
@@ -46,8 +47,9 @@ cp "$work/snappy-1.2.2/"*.h "$prefix/include/"
 (cd "$work/snzip-1.0.5"; ./configure --with-snappy="$prefix" CC=clang CXX=clang++ CFLAGS="$flags" CXXFLAGS="$flags" LDFLAGS="$flags"; make -j4)
 (cd "$work/lzo-2.10"; ./configure --prefix="$prefix" --disable-shared CC=clang CFLAGS="$flags" LDFLAGS="$flags"; make -j4; make install)
 (cd "$work/lrzip-0.7.3"; ./configure CC=clang CXX=clang++ CFLAGS="$flags" CXXFLAGS="$flags -DNOJIT" CPPFLAGS="-I$prefix/include" LDFLAGS="$flags -L$prefix/lib"; make -j4)
-cp "$work/lzip-1.26/lzip" "$work/lz4-1.10.0/lz4" "$work/brotli" "$work/snzip-1.0.5/snzip" "$work/lrzip-0.7.3/lrzip" Vendor/Formats/bin/
-for name in lzip lz4 brotli snzip lrzip; do
+(cd "$work/lzop-1.04"; ./configure --disable-dependency-tracking CC=clang CFLAGS="$flags" CPPFLAGS="-I$prefix/include" LDFLAGS="$flags -L$prefix/lib"; make -j4)
+cp "$work/lzip-1.26/lzip" "$work/lz4-1.10.0/lz4" "$work/brotli" "$work/snzip-1.0.5/snzip" "$work/lrzip-0.7.3/lrzip" "$work/lzop-1.04/src/lzop" Vendor/Formats/bin/
+for name in lzip lz4 brotli snzip lrzip lzop; do
   archs="$(lipo "Vendor/Formats/bin/$name" -archs)"
   [[ " $archs " == *' arm64 '* && " $archs " == *' x86_64 '* ]]
   otool -L "Vendor/Formats/bin/$name"
@@ -61,5 +63,6 @@ cp "$work/snappy-1.2.2/COPYING" Vendor/Formats/Licenses/snappy.txt
 cp "$work/snzip-1.0.5/COPYING" Vendor/Formats/Licenses/snzip.txt
 cp "$work/lzo-2.10/COPYING" Vendor/Formats/Licenses/lzo.txt
 cp "$work/lrzip-0.7.3/COPYING" Vendor/Formats/Licenses/lrzip.txt
+cp "$work/lzop-1.04/COPYING" Vendor/Formats/Licenses/lzop.txt
 mkdir -p Vendor/Formats/SourcePackages
 cp "$work/sources/"* Vendor/Formats/SourcePackages/

@@ -2,7 +2,25 @@ import AppKit
 import LiteZipCore
 
 extension ArchiveFormat {
+    /// Menus show only everyday formats; the full list lives grouped in the options
+    /// panel so the format menu never becomes a 21-row wall.
+    static let commonFormats: [ArchiveFormat] = [.zip, .sevenZip, .rar, .tarGzip]
+    /// Creation is offered only for formats people actually produce. Single-file
+    /// compressors and niche images stay extract-only in the UI; the engines keep
+    /// full support, so archives in those formats still open.
+    static let creatableFormats: [ArchiveFormat] = [.zip, .sevenZip, .rar, .tar, .tarGzip, .tarBzip2, .tarXZ, .tarZstd, .dmg, .iso]
+    var offersCreation: Bool { Self.creatableFormats.contains(self) }
+    static let groupedFormats: [(title: String, formats: [ArchiveFormat])] = [
+        ("常用", [.zip, .sevenZip, .rar, .tarGzip]),
+        ("TAR 家族", [.tar, .tarBzip2, .tarXZ, .tarZstd]),
+        ("磁盘映像", [.dmg, .iso])
+    ]
+
     @MainActor var menuBadge: NSImage { ArchiveBadgeCache.images[rawValue]! }
+
+    /// Finder-style document icon for the format, used by the format menus and selector.
+    /// Falls back to the coloured badge for the few formats without dedicated artwork.
+    @MainActor var fileIcon: NSImage { ArchiveFileIconCache.icon(for: self) }
 
     var menuSummary: String {
         switch self {
@@ -20,6 +38,10 @@ extension ArchiveFormat {
         case .iso: "光盘映像 · 不压缩"
         case .dmg: "磁盘映像"
         case .zipx: "仅解压"
+        case .cab: "Windows 压缩包 · 仅解压"
+        case .cpio: "CPIO 归档 · 仅解压"
+        case .lzh: "LHA 压缩包 · 仅解压"
+        case .lzma, .z, .lzop: "单个文件压缩 · 仅解压"
         }
     }
 }
@@ -36,7 +58,9 @@ private enum ArchiveBadgeCache {
             .zstd: 0xA16207, .dmg: 0x92400E, .zipx: 0xA21CAF,
             .lzip: 0x9D174D, .lz4: 0x365314, .brotli: 0x166534,
             .lrzip: 0x4C1D95, .aar: 0x334155, .snappy: 0xB45309,
-            .wim: 0x075985, .iso: 0x52525B
+            .wim: 0x075985, .iso: 0x52525B,
+            .cab: 0x9A3412, .cpio: 0x57534E, .lzh: 0x0F766E,
+            .lzma: 0x1E3A8A, .z: 0xB91C1C, .lzop: 0x854D0E
         ]
         let hex = colors[format]!
         let color = NSColor(srgbRed: CGFloat((hex >> 16) & 255) / 255,
@@ -57,4 +81,18 @@ private enum ArchiveBadgeCache {
         image.accessibilityDescription = format.title
         return (format.rawValue, image)
     })
+}
+
+@MainActor
+private enum ArchiveFileIconCache {
+    static var icons: [String: NSImage] = [:]
+    static func icon(for format: ArchiveFormat) -> NSImage {
+        if let cached = icons[format.rawValue] { return cached }
+        let image = Bundle.main.url(forResource: "Document-\(format.rawValue)", withExtension: "png")
+            .flatMap(NSImage.init(contentsOf:)) ?? format.menuBadge
+        image.isTemplate = false
+        image.accessibilityDescription = format.title
+        icons[format.rawValue] = image
+        return image
+    }
 }

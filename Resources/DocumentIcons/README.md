@@ -8,4 +8,4 @@
 
 Finder 依据文件的内容类型及默认打开应用选择图标。项目使用 Alternate 处理程序优先级，安装不会覆盖用户现有的默认打开应用。将某类压缩文件设置为用 LiteZip 默认打开后，Finder 才会选用对应的文稿图标。`.tar.gz` 等复合后缀可能由系统识别为外层 GZIP；TGZ/TBZ2/TXZ/TZST 有独立类型和图标。ZIPX 图标仅表示解压支持，不添加 ZIPX 压缩能力。
 
-macOS 26 及以上的工具栏使用原生 `glassEffect(.regular.interactive(), in: Capsule())`；macOS 13–15 使用标准半透明材质回退。每个控件只有一层与内容尺寸一致的材质，没有额外外圈阴影。
+工具栏控件使用实色 `controlBackgroundColor` 胶囊加 1 点描边，不使用玻璃效果或半透明材质。每个控件只有一层与内容尺寸一致的表面，没有额外外圈阴影。

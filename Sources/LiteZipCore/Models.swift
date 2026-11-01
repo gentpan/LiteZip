@@ -3,6 +3,9 @@ import Foundation
 public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable {
     case zip, sevenZip, rar, tar, tarGzip, tarBzip2, tarXZ, tarZstd, gzip, bzip2, xz, zstd
     case lzip, lz4, brotli, lrzip, aar, snappy, wim, dmg, iso, zipx
+    /// Extract-only: opened by the bundled 7-Zip, or lzop for .lzo. 7-Zip returns only an
+    /// inner payload blob for .pkg/.xip (xar), .deb and .rpm, so those are deliberately absent.
+    case cab, cpio, lzh, lzma, z, lzop
     public var id: String { rawValue }
     public var title: String {
         switch self {
@@ -15,19 +18,21 @@ public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable
         }
     }
     public var suffix: String {
-        switch self { case .sevenZip: "7z"; case .tarGzip: "tar.gz"; case .tarBzip2: "tar.bz2"; case .tarXZ: "tar.xz"; case .tarZstd: "tar.zst"; case .gzip: "gz"; case .bzip2: "bz2"; case .zstd: "zst"; case .lzip: "lz"; case .brotli: "br"; case .lrzip: "lrz"; case .snappy: "sz"; default: rawValue }
+        switch self { case .sevenZip: "7z"; case .tarGzip: "tar.gz"; case .tarBzip2: "tar.bz2"; case .tarXZ: "tar.xz"; case .tarZstd: "tar.zst"; case .gzip: "gz"; case .bzip2: "bz2"; case .zstd: "zst"; case .lzip: "lz"; case .brotli: "br"; case .lrzip: "lrz"; case .snappy: "sz"; case .lzop: "lzo"; default: rawValue }
     }
     public var engineType: String { self == .sevenZip ? "7z" : rawValue }
+    /// Formats LiteZip can open but never writes.
+    public var extractOnly: Bool { [.zipx, .cab, .cpio, .lzh, .lzma, .z, .lzop].contains(self) }
     /// RAR creation additionally requires a separately installed official engine.
-    public var canCreate: Bool { self != .zipx }
+    public var canCreate: Bool { !extractOnly }
     public var supportsPassword: Bool { [.zip, .sevenZip, .rar, .dmg].contains(self) }
-    public var singleFileOnly: Bool { [.gzip, .bzip2, .xz, .zstd, .lzip, .lz4, .brotli, .lrzip, .snappy].contains(self) }
+    public var singleFileOnly: Bool { [.gzip, .bzip2, .xz, .zstd, .lzip, .lz4, .brotli, .lrzip, .snappy, .lzma, .z, .lzop].contains(self) }
     public var supportsVolumes: Bool { [.zip, .sevenZip, .rar].contains(self) }
     public var supportsStore: Bool { [.zip, .sevenZip, .rar, .aar, .wim, .dmg, .iso].contains(self) }
     public var supportsCompressionLevel: Bool { ![.tar, .iso, .snappy].contains(self) }
     /// These standalone stream formats use their own bundled tools, not 7-Zip.
     var standaloneEngine: String? {
-        switch self { case .lzip: "lzip"; case .lz4: "lz4"; case .brotli: "brotli"; case .lrzip: "lrzip"; case .snappy: "snzip"; default: nil }
+        switch self { case .lzip: "lzip"; case .lz4: "lz4"; case .brotli: "brotli"; case .lrzip: "lrzip"; case .snappy: "snzip"; case .lzop: "lzop"; default: nil }
     }
     public var tarCompression: ArchiveFormat? {
         switch self { case .tarGzip: .gzip; case .tarBzip2: .bzip2; case .tarXZ: .xz; case .tarZstd: .zstd; default: nil }
@@ -57,7 +62,8 @@ public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable
         let ext = url.pathExtension.lowercased()
         if let format = aliases[ext] { return format }
         if name.hasSuffix(".tar.zstd") { return .tarZstd }
-        let extensions: [String: ArchiveFormat] = ["zip": .zip, "zipx": .zipx, "7z": .sevenZip, "rar": .rar, "tar": .tar, "gz": .gzip, "gzip": .gzip, "bz2": .bzip2, "bzip2": .bzip2, "xz": .xz, "zst": .zstd, "zstd": .zstd, "lz": .lzip, "lzip": .lzip, "lz4": .lz4, "br": .brotli, "brotli": .brotli, "lrz": .lrzip, "lrzip": .lrzip, "aar": .aar, "sz": .snappy, "snappy": .snappy, "wim": .wim, "dmg": .dmg, "iso": .iso]
+        let extensions: [String: ArchiveFormat] = ["zip": .zip, "zipx": .zipx, "7z": .sevenZip, "rar": .rar, "tar": .tar, "gz": .gzip, "gzip": .gzip, "bz2": .bzip2, "bzip2": .bzip2, "xz": .xz, "zst": .zstd, "zstd": .zstd, "lz": .lzip, "lzip": .lzip, "lz4": .lz4, "br": .brotli, "brotli": .brotli, "lrz": .lrzip, "lrzip": .lrzip, "aar": .aar, "sz": .snappy, "snappy": .snappy, "wim": .wim, "dmg": .dmg, "iso": .iso,
+            "cab": .cab, "cpio": .cpio, "lzh": .lzh, "lha": .lzh, "lzma": .lzma, "z": .z, "lzo": .lzop, "lzop": .lzop]
         if let format = extensions[ext] { return format }
         guard let handle = try? FileHandle(forReadingFrom: url) else { return nil }
         defer { try? handle.close() }
@@ -75,6 +81,11 @@ public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable
         if bytes.starts(with: Array("LRZI".utf8)) { return .lrzip }
         if bytes.starts(with: [0xff, 6, 0, 0] + Array("sNaPpY".utf8)) { return .snappy }
         if bytes.starts(with: Array("MSWIM\0\0\0".utf8)) { return .wim }
+        if bytes.starts(with: Array("MSCF".utf8)) { return .cab }
+        if bytes.starts(with: [0x1f, 0x9d]) { return .z }
+        if bytes.starts(with: [0x89, 0x4c, 0x5a, 0x4f, 0x00, 0x0d, 0x0a, 0x1a, 0x0a]) { return .lzop }
+        // LHA headers carry the method ("-lh5-") right after a two-byte size/checksum prefix.
+        if bytes.count >= 7, Array(bytes[2...4]) == Array("-lh".utf8), bytes[6] == 0x2d { return .lzh }
         if bytes.starts(with: Array("AA01".utf8)) || bytes.starts(with: Array("YAA1".utf8)) || bytes.starts(with: Array("pbze".utf8)) || bytes.starts(with: Array("pbzx".utf8)) { return .aar }
         // ISO volume descriptors are beyond the initial file header.
         if (try? handle.seek(toOffset: 32_769)) != nil,

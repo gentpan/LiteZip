@@ -10,12 +10,33 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     }
     func applicationDidFinishLaunching(_ notification: Notification) {
         AppModel.shared.preferences.applyAppearance()
+        AppModel.shared.preferences.applyDockIcon()
         menuBar = MenuBarController(model: .shared)
         // AppKit adds Writing Tools, AutoFill and similar items when a menu opens, so tidy again then.
         for name in [NSMenu.didBeginTrackingNotification, NSMenu.didAddItemNotification] {
             NotificationCenter.default.addObserver(self, selector: #selector(menuChanged(_:)), name: name, object: nil)
         }
+        // Menu-bar-first launch: hide and close the primary window the instant SwiftUI
+        // creates it, before a frame is composited, so launch shows no window flash.
+        if AppModel.shared.preferences.showsMenuBar { suppressLaunchWindow() }
         UpdateController.shared.checkOnLaunchIfNeeded(enabled: AppModel.shared.preferences.checksForUpdates)
+    }
+    private func suppressLaunchWindow() {
+        Task { @MainActor in
+            for _ in 0..<1000 {
+                if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
+                    // Zero opacity kills the launch flash; restore it once the window is
+                    // off-screen so the same instance SwiftUI reuses for an on-demand
+                    // openWindow is opaque again instead of permanently transparent.
+                    window.alphaValue = 0
+                    window.orderOut(nil)
+                    window.alphaValue = 1
+                    window.close()
+                    return
+                }
+                try? await Task.sleep(for: .milliseconds(2))
+            }
+        }
     }
     @objc private func menuChanged(_ notification: Notification) {
         guard let menu = notification.object as? NSMenu, let main = NSApp.mainMenu else { return }
@@ -44,6 +65,14 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
         !AppModel.shared.preferences.showsMenuBar && !AppModel.shared.jobs.contains { !$0.state.isFinished }
     }
     func applicationShouldTerminate(_ sender: NSApplication) -> NSApplication.TerminateReply {
+        // ⌘Q closes the windows but keeps the menu bar entry resident; quitting
+        // for real stays available from the menu bar popover and the app menu.
+        if AppModel.shared.preferences.showsMenuBar,
+           let event = NSApp.currentEvent, event.type == .keyDown, event.modifierFlags.contains(.command),
+           event.charactersIgnoringModifiers?.lowercased() == "q" {
+            for window in NSApp.windows { window.close() }
+            return .terminateCancel
+        }
         guard AppModel.shared.jobs.contains(where: { !$0.state.isFinished }) else { return .terminateNow }
         let alert = NSAlert()
         alert.messageText = "取消正在运行的任务并退出？"
@@ -65,8 +94,10 @@ struct LiteZipApp: App {
     @StateObject private var model = AppModel.shared
     @ObservedObject private var preferences = AppModel.shared.preferences
     var body: some Scene {
-        WindowGroup("LiteZip", id: "main") { MainView(model: model).environmentObject(model.preferences).frame(minWidth: 480, minHeight: 600) }
-            .defaultSize(width: 560, height: 730)
+        // SwiftUI opens this Window at launch even in menu-bar mode, so suppressLaunchWindow
+        // hides that first instance; "更多格式…"/Finder actions reopen it on demand.
+        Window("LiteZip", id: "main") { MainView(model: model).environmentObject(model.preferences) }
+            .defaultSize(width: 560, height: 460)
             .commands {
                 CommandGroup(after: .appInfo) {
                     Button("检查更新…") { UpdateController.shared.check(userInitiated: true) }
@@ -74,17 +105,13 @@ struct LiteZipApp: App {
                 CommandGroup(replacing: .newItem) {
                     Button("选择文件…", action: model.chooseFiles).keyboardShortcut("o")
                 }
-                // Hiding the toolbar would also hide the compress/extract switch and format menu.
+                // Hiding the toolbar would also hide the format menu.
                 CommandGroup(replacing: .toolbar) {}
                 // Find, spelling and text substitutions do not apply to LiteZip's fields.
                 CommandGroup(replacing: .textEditing) {}
                 CommandMenu("压缩包") {
-                    ForEach(AppModel.Mode.allCases) { mode in
-                        Toggle(mode.rawValue, isOn: Binding(get: { model.mode == mode }, set: { _ in model.mode = mode }))
-                            .keyboardShortcut(mode == .compress ? "1" : "2")
-                    }
+                    Toggle("选项面板", isOn: $preferences.showsInspector).keyboardShortcut("3")
                     Divider()
-                    Button("预览内容") { model.browserURL = model.files.first }.disabled(model.files.count != 1 || model.mode != .extract)
                     Button("清除已结束的任务", action: model.clearFinished)
                     if preferences.showsMenuBar {
                         Divider()

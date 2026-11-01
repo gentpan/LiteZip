@@ -1,4 +1,4 @@
-7-Zip 26.03 for Linux and macOS
+7-Zip 26.05 for Linux and macOS
 -------------------------------
 
 7-Zip is a file archiver for Windows/Linux/macOS.

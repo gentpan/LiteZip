@@ -41,6 +41,7 @@ extension ArchiveService {
         case .lz4: args = ["-d", "-q", "-c", "--", archive.path]
         case .brotli: args = ["-d", "-c", "--", archive.path]
         case .snappy: args = ["-d", "-c", "--", archive.path]
+        case .lzop: args = ["-d", "-q", "-c", "--", archive.path]
         case .lrzip: args = ["-d", "-Q", "-p", "2", "-m", "2", "-w", "1", "-o", "-", "--", archive.path]
         default: throw ArchiveError.unsupportedFormat
         }

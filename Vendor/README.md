@@ -1,11 +1,11 @@
 # Bundled engines
 
-## 7-Zip 26.03
+## 7-Zip 26.05
 
-- Official release: https://github.com/ip7z/7zip/releases/tag/26.03
-- macOS universal package: https://github.com/ip7z/7zip/releases/download/26.03/7z2603-mac.tar.xz
-- Package SHA-256: `5ca87677072c59f5602e5c49baa27d4694bacd2259b4e507f0094249d4281480`
-- Corresponding source: https://github.com/ip7z/7zip/releases/download/26.03/7z2603-src.tar.xz
+- Official release: https://github.com/ip7z/7zip/releases/tag/26.05
+- macOS universal package: https://github.com/ip7z/7zip/releases/download/26.05/7z2605-mac.tar.xz
+- Package SHA-256: `12ef6830317743cfd3f0ab1724bde43fcc270d8b6d8564f8c12c2a2b7f993570`
+- Corresponding source: https://github.com/ip7z/7zip/releases/download/26.05/7z2605-src.tar.xz
 - `7zip/7zz` is the unmodified upstream executable (code signatures are applied to copies in build products).
 - LGPL 2.1+ and unRAR restrictions plus listed component licenses. Read `7zip/License.txt`.
 - The bundled executable can be replaced by a compatible user-built executable.

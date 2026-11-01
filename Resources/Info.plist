@@ -382,6 +382,27 @@
 		<dict>
 			<key>CFBundleTypeExtensions</key>
 			<array>
+				<string>cab</string>
+				<string>cpio</string>
+				<string>lzh</string>
+				<string>lha</string>
+				<string>lzma</string>
+				<string>z</string>
+				<string>lzo</string>
+				<string>lzop</string>
+			</array>
+			<key>CFBundleTypeIconFile</key>
+			<string>AppIcon.icns</string>
+			<key>CFBundleTypeName</key>
+			<string>LiteZip Legacy Archive</string>
+			<key>CFBundleTypeRole</key>
+			<string>Viewer</string>
+			<key>LSHandlerRank</key>
+			<string>Alternate</string>
+		</dict>
+		<dict>
+			<key>CFBundleTypeExtensions</key>
+			<array>
 				<string>dmg</string>
 			</array>
 			<key>CFBundleTypeIconFile</key>
