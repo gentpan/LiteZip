@@ -38,14 +38,22 @@ struct MainView: View {
         .preferredColorScheme(preferences.appearance.colorScheme)
         .onAppear { model.openMainWindow = { openWindow(id: "main") }; model.visibleMainWindows += 1; configureWindow(); recomputeSelectionSize(model.files) }
         .onChange(of: model.files) { urls in recomputeSelectionSize(urls) }
+        .onChange(of: preferences.showsInspector) { shown in if shown { clearAutomaticFocus() } }
         .onDisappear { model.visibleMainWindows = max(0, model.visibleMainWindows - 1) }
+        // A flexible space pushes both controls right, onto the canvas's trailing edge;
+        // while the panel is open a clear item as wide as the panel keeps them off it.
+        // (On macOS .primaryAction means the leading edge.)
         .toolbar {
             if #available(macOS 26.0, *) {
+                ToolbarSpacer(.flexible)
                 formatToolbarItem.sharedBackgroundVisibility(.hidden)
                 inspectorToolbarItem.sharedBackgroundVisibility(.hidden)
+                if preferences.showsInspector { inspectorGapItem.sharedBackgroundVisibility(.hidden) }
             } else {
+                ToolbarItem { Spacer() }
                 formatToolbarItem
                 inspectorToolbarItem
+                if preferences.showsInspector { inspectorGapItem }
             }
         }
         .onChange(of: model.format) { _ in model.formatChanged() }
@@ -59,18 +67,24 @@ struct MainView: View {
 
     // MARK: - Canvas
 
-    /// macOS restores the previous window frame, and an empty window has nothing to fill
-    /// a tall frame, so the first empty window of a session is compacted once. The
-    /// titlebar keeps only the traffic lights and the toolbar controls.
-    private static var compactedEmptyWindow = false
+    /// The titlebar keeps only the traffic lights and the toolbar controls. The size is
+    /// left alone: SwiftUI saves the frame the user drags to and restores it next time.
     private func configureWindow() {
         Task { @MainActor in
             guard let window = NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }) else { return }
             window.titleVisibility = .hidden
-            guard !Self.compactedEmptyWindow, model.files.isEmpty, model.jobs.isEmpty,
-                  let width = window.contentView?.bounds.width else { return }
-            Self.compactedEmptyWindow = true
-            window.setContentSize(NSSize(width: min(max(width, 460), 560), height: 340))
+            clearAutomaticFocus()
+        }
+    }
+
+    /// AppKit gives the panel's first text field (分卷) focus when the window becomes key or
+    /// the panel appears, so it looks as if it awaits typing. Clear that until the user
+    /// clicks a field; only the panel has text fields, so nothing else loses focus.
+    private func clearAutomaticFocus() {
+        DispatchQueue.main.async {
+            guard let window = NSApp.windows.first(where: { $0.isVisible && $0.canBecomeMain }),
+                  window.firstResponder is NSTextView else { return }
+            window.makeFirstResponder(nil)
         }
     }
 
@@ -123,7 +137,7 @@ struct MainView: View {
                         }
                         HStack {
                             Spacer()
-                            Button(model.separateArchives ? "分别压缩…" : [.dmg, .iso].contains(model.format) ? "制作 \(model.format.title)…" : "压缩…", action: model.chooseDestination)
+                            Button(model.separateArchives ? "分别压缩" : [.dmg, .iso].contains(model.format) ? "制作 \(model.format.title)" : "压缩", action: model.chooseDestination)
                                 .buttonStyle(.borderedProminent).controlSize(.large).keyboardShortcut(.return, modifiers: [.command])
                                 .disabled(model.validationMessage != nil)
                         }
@@ -136,7 +150,7 @@ struct MainView: View {
                             Spacer()
                             Button("清除已结束", action: model.clearFinished).buttonStyle(.borderless)
                         }
-                        LazyVStack(spacing: 10) { ForEach(model.jobs) { JobRow(job: $0, model: model) } }
+                        LazyVStack(spacing: 8) { ForEach(model.jobs) { JobRow(job: $0, model: model) } }
                     }
                 }
                 .padding(22)
@@ -144,6 +158,7 @@ struct MainView: View {
                 // a large void below; taller content still scrolls from the top.
                 .frame(maxWidth: .infinity, minHeight: proxy.size.height, alignment: .center)
             }
+            .scrollIndicators(.never)
             // The strip stays narrow for looks; the whole canvas remains a drop target.
             .onDrop(of: [UTType.fileURL.identifier], isTargeted: $targeted) { providers in
                 collectDroppedURLs(providers) { model.receive($0) }
@@ -238,7 +253,9 @@ struct MainView: View {
                 compressionSettings
             }.padding(20)
         }
-        .frame(width: 320)
+        // With a mouse attached, macOS keeps a dark legacy scroller beside the panel.
+        .scrollIndicators(.never)
+        .frame(width: Self.inspectorWidth)
         .background(Color(nsColor: .underPageBackgroundColor))
     }
 
@@ -277,21 +294,9 @@ struct MainView: View {
     }
 
     private var compressionSettings: some View {
+        // The format is chosen only in the toolbar menu; the panel holds what is changed
+        // occasionally, so it stays short.
         VStack(alignment: .leading, spacing: 22) {
-            inspectorSection("压缩格式") {
-                Picker("压缩格式", selection: $model.format) {
-                    ForEach(ArchiveFormat.groupedFormats, id: \.title) { group in
-                        Section(group.title) {
-                            ForEach(group.formats, id: \.self) { format in
-                                Label { Text(format.title) } icon: { Image(nsImage: format.fileIcon).resizable().scaledToFit().frame(width: 18, height: 18) }
-                                    .tag(format).accessibilityLabel(format.title + "，" + format.menuSummary)
-                            }
-                        }
-                    }
-                }
-                .pickerStyle(.inline)
-                .labelsHidden()
-            }
             inspectorSection("压缩方式") {
                 VStack(alignment: .leading, spacing: 8) {
                     Slider(value: levelIndex, in: 0...Double(levels.count - 1), step: 1)
@@ -305,15 +310,8 @@ struct MainView: View {
                 }
             }
             inspectorSection("分卷") {
-                HStack(spacing: 4) {
-                    TextField(model.format.supportsVolumes ? "不分卷，例如 100 MB" : "此格式不支持分卷", text: $model.volumeSize).textFieldStyle(.roundedBorder)
-                        .accessibilityLabel("分卷大小")
-                    Menu {
-                        Button("不分卷") { model.volumeSize = "" }
-                        Divider()
-                        ForEach(["5 MB", "100 MB", "500 MB", "1 GB", "2 GB"], id: \.self) { size in Button(size) { model.volumeSize = size } }
-                    } label: { Image(systemName: "chevron.down") }.menuStyle(.borderlessButton).menuIndicator(.hidden).fixedSize().accessibilityLabel("分卷预设")
-                }.disabled(!model.format.supportsVolumes)
+                VolumeSizeField(text: $model.volumeSize, supported: model.format.supportsVolumes)
+                    .disabled(!model.format.supportsVolumes)
             }
             inspectorSection("密码") {
                 VStack(alignment: .leading, spacing: 8) {
@@ -371,6 +369,16 @@ struct MainView: View {
         withAnimation(.easeInOut(duration: 0.18)) { preferences.showsInspector.toggle() }
     }
 
+    static let inspectorWidth: CGFloat = 320
+
+    /// Occupies the toolbar above the open panel so the controls stay over the canvas,
+    /// with the same 14 pt trailing margin they keep from the window edge when it is closed.
+    private var inspectorGapItem: some ToolbarContent {
+        ToolbarItem {
+            Color.clear.frame(width: Self.inspectorWidth + 1, height: 1).accessibilityHidden(true)
+        }
+    }
+
     private var inspectorToolbarItem: some ToolbarContent {
         ToolbarItem {
             Button(action: toggleInspector) {
@@ -382,31 +390,23 @@ struct MainView: View {
         }
     }
 
-    private func formatLabel(_ format: ArchiveFormat) -> some View {
-        Label { Text(format.title) } icon: {
-            Image(nsImage: format.fileIcon).resizable().scaledToFit().frame(width: 18, height: 18)
-        }.tag(format).accessibilityLabel(format.title)
-    }
-
+    /// The one place the main window picks a format: every creatable format by family,
+    /// the same menu as the menu bar popover.
     private var formatToolbarItem: some ToolbarContent {
         ToolbarItem {
             Menu {
                 Picker("压缩格式", selection: $model.format) {
-                    ForEach(ArchiveFormat.commonFormats, id: \.self) { format in
-                        formatLabel(format)
+                    ForEach(ArchiveFormat.groupedFormats, id: \.title) { group in
+                        Section(group.title) {
+                            ForEach(group.formats, id: \.self) { format in
+                                Text(format.title).tag(format).accessibilityLabel(format.title + "，" + format.menuSummary)
+                            }
+                        }
                     }
                 }.pickerStyle(.inline).labelsHidden()
-                Divider()
-                Button("更多格式…") {
-                    withAnimation(.easeInOut(duration: 0.18)) { preferences.showsInspector = true }
-                }
-                .help("在选项面板中按家族浏览全部格式")
             } label: {
                 HStack(spacing: 6) {
-                    Image(nsImage: model.format.fileIcon)
-                        .resizable().scaledToFit().frame(width: 20, height: 20)
-                        .accessibilityHidden(true)
-                    Text(model.format.title).font(.callout.weight(.medium))
+                    FormatBadge(format: model.format, size: 11)
                     Image(systemName: "chevron.down").font(.system(size: 9, weight: .semibold))
                         .foregroundStyle(.secondary)
                 }
@@ -431,27 +431,6 @@ private struct ToolbarSurface: ViewModifier {
         content
             .background(Capsule().fill(Color(nsColor: .controlBackgroundColor)))
             .overlay(Capsule().strokeBorder(Color.primary.opacity(0.14), lineWidth: 1))
-    }
-}
-
-private struct PasswordInput: View {
-    let placeholder: String
-    let accessibilityLabel: String
-    @Binding var text: String
-    @Binding var visible: Bool
-    let showsVisibilityButton: Bool
-    var body: some View {
-        HStack(spacing: 8) {
-            Group {
-                if visible { TextField(placeholder, text: $text) }
-                else { SecureField(placeholder, text: $text) }
-            }.textFieldStyle(.roundedBorder).accessibilityLabel(accessibilityLabel)
-            if showsVisibilityButton {
-                // The icon states what the field shows now: open eye = plaintext visible.
-                Button { visible.toggle() } label: { Image(systemName: visible ? "eye" : "eye.slash") }
-                    .buttonStyle(.borderless).help(visible ? "隐藏密码" : "显示密码").accessibilityLabel(visible ? "隐藏密码" : "显示密码")
-            }
-        }
     }
 }
 
@@ -482,72 +461,120 @@ struct BrowserSelection: Identifiable {
 
 /// Tick-mark progress in the style of usage meters: filled ticks behind the head,
 /// one accent tick at the head, dim ticks ahead of it.
+/// Progress as tall rounded slats, like a usage meter. Done slats are green in light mode
+/// and white in dark mode; the slat being worked on is deep green or purple; the rest are
+/// faint. The slat count follows the width, so every slat keeps the same shape in the wide
+/// main window and the narrow menu bar popover.
 struct SegmentedProgress: View {
     var fraction: Double
-    var height: CGFloat = 14
-    var ticks: Int = 36
+    var height: CGFloat = 22
+    var slatWidth: CGFloat = 7
+    var spacing: CGFloat = 3
     @Environment(\.colorScheme) private var scheme
     var body: some View {
         let clamped = min(max(fraction, 0), 1)
-        let filled = Int((clamped * Double(ticks)).rounded(.down))
-        HStack(spacing: 2) {
-            ForEach(0..<ticks, id: \.self) { index in
-                Capsule()
-                    .fill(color(for: index, filled: filled))
-                    .frame(maxWidth: .infinity, maxHeight: .infinity)
+        GeometryReader { proxy in
+            let count = max(8, Int((proxy.size.width + spacing) / (slatWidth + spacing)))
+            let filled = Int((clamped * Double(count)).rounded(.down))
+            HStack(spacing: spacing) {
+                ForEach(0..<count, id: \.self) { index in
+                    RoundedRectangle(cornerRadius: 2, style: .continuous)
+                        .fill(color(for: index, filled: filled, finished: clamped >= 1))
+                }
             }
+            .animation(.easeOut(duration: 0.2), value: filled)
         }
         .frame(height: height)
-        .animation(.easeOut(duration: 0.2), value: filled)
         .accessibilityElement()
         .accessibilityLabel("进度")
         .accessibilityValue("\(Int(clamped * 100))%")
     }
-    private func color(for index: Int, filled: Int) -> Color {
-        if index == filled { return .accentColor }
-        if index < filled { return scheme == .dark ? .white : Color(nsColor: .systemGreen) }
-        return .primary.opacity(scheme == .dark ? 0.18 : 0.15)
+    private func color(for index: Int, filled: Int, finished: Bool) -> Color {
+        let dark = scheme == .dark
+        if index < filled { return dark ? Color(red: 0.949, green: 0.949, blue: 0.969) : Color(red: 0.204, green: 0.780, blue: 0.349) }
+        if index == filled && !finished { return dark ? Color(red: 0.486, green: 0.435, blue: 0.961) : Color(red: 0.082, green: 0.502, blue: 0.239) }
+        return dark ? Color.white.opacity(0.12) : Color.black.opacity(0.09)
     }
 }
 
+/// One task: format badge, file name, a one-line status, progress while running, and small
+/// icon actions (show in Finder, cancel, retry) that the context menu repeats in words.
 struct JobRow: View {
     @ObservedObject var job: ArchiveJob
     @ObservedObject var model: AppModel
     var body: some View {
-        VStack(alignment: .leading, spacing: 10) {
-            HStack {
-                if let format = job.badgeFormat {
-                    Image(nsImage: format.menuBadge).resizable().scaledToFit().frame(width: 46, height: 15).accessibilityHidden(true)
+        HStack(alignment: .top, spacing: 12) {
+            // The badge sits beside the name, so badges of any width need no reserved column;
+            // the status line and the progress bar below start at the card edge and align.
+            VStack(alignment: .leading, spacing: 6) {
+                HStack(spacing: 8) {
+                    if let format = job.badgeFormat { FormatBadge(format: format, size: 10) }
+                    Text(subject).font(.body.weight(.medium)).lineLimit(1).truncationMode(.middle)
                 }
-                Label(job.title, systemImage: job.extracting ? "archivebox" : "archivebox.fill").font(.headline).lineLimit(1)
-                Spacer()
-                Text(job.state.rawValue).font(.caption).foregroundStyle(job.state == .failed ? Color.red : Color.secondary)
-                if !job.state.isFinished { Button("取消") { model.cancel(job) } }
-                if job.state == .failed || job.state == .cancelled { Button("重试") { model.retry(job) } }
-                if let result = job.result { Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([result]) } }
-            }
-            if job.state == .running {
-                if let fraction = job.progress.fraction { SegmentedProgress(fraction: fraction) }
-                else { ProgressView().controlSize(.small) }
-                HStack {
-                    Text(job.progress.currentFile.isEmpty ? "正在处理…" : job.progress.currentFile).lineLimit(1).truncationMode(.middle)
-                    Spacer()
-                    if job.progress.totalBytes > 0 {
-                        Text(ByteCountFormatter.string(fromByteCount: job.progress.processedBytes, countStyle: .file) + " / " + ByteCountFormatter.string(fromByteCount: job.progress.totalBytes, countStyle: .file)).monospacedDigit()
-                    }
-                }.font(.caption).foregroundStyle(.secondary)
-                if job.progress.bytesPerSecond > 0 {
-                    HStack {
-                        Text(ByteCountFormatter.string(fromByteCount: Int64(job.progress.bytesPerSecond), countStyle: .file) + "/s")
-                        if let seconds = job.progress.remainingSeconds { Text("约剩余 \(Int(seconds)) 秒") }
-                    }.font(.caption2).foregroundStyle(.secondary)
+                status
+                if job.state == .running {
+                    if let fraction = job.progress.fraction { SegmentedProgress(fraction: fraction) }
+                    else { ProgressView().progressViewStyle(.linear).controlSize(.small) }
                 }
             }
-            if let error = job.error { Text(error).font(.callout).foregroundStyle(job.state == .failed ? Color.red : Color.secondary).textSelection(.enabled) }
-            if let result = job.result { Text(result.lastPathComponent).font(.caption).foregroundStyle(.secondary).textSelection(.enabled) }
+            Spacer(minLength: 8)
+            HStack(spacing: 4) {
+                if let result = job.result { iconButton("magnifyingglass", "在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([result]) } }
+                if job.state == .failed || job.state == .cancelled { iconButton("arrow.clockwise", "重试") { model.retry(job) } }
+                if !job.state.isFinished { iconButton("xmark.circle.fill", "取消") { model.cancel(job) } }
+            }
         }
-        .padding(16)
-        .background(RoundedRectangle(cornerRadius: 12).fill(Color(nsColor: .controlBackgroundColor)))
-        .overlay(RoundedRectangle(cornerRadius: 12).strokeBorder(Color.primary.opacity(0.08), lineWidth: 1))
+        .padding(.horizontal, 14).padding(.vertical, 12)
+        .background(RoundedRectangle(cornerRadius: 10, style: .continuous).fill(Color(nsColor: .controlBackgroundColor)))
+        .overlay(RoundedRectangle(cornerRadius: 10, style: .continuous).strokeBorder(Color.primary.opacity(0.07), lineWidth: 1))
+        .contextMenu {
+            if let result = job.result { Button("在 Finder 中显示") { NSWorkspace.shared.activateFileViewerSelecting([result]) } }
+            if job.state == .failed || job.state == .cancelled { Button("重试") { model.retry(job) } }
+            if !job.state.isFinished { Button("取消") { model.cancel(job) } }
+        }
+    }
+
+    private var subject: String { job.files.count == 1 ? job.files[0].lastPathComponent : "\(job.files.count) 个项目" }
+
+    @ViewBuilder private var status: some View {
+        switch job.state {
+        case .completed:
+            Label {
+                Text((job.extracting ? "解压完成" : "压缩完成") + (job.result.map { " · " + $0.lastPathComponent } ?? ""))
+                    .lineLimit(1).truncationMode(.middle).textSelection(.enabled)
+            } icon: { Image(systemName: "checkmark.circle.fill").foregroundStyle(.green) }
+            .font(.caption).foregroundStyle(.secondary)
+        case .failed:
+            Text(job.error ?? "失败").font(.caption).foregroundStyle(.red).lineLimit(2).fixedSize(horizontal: false, vertical: true).textSelection(.enabled)
+        case .cancelled:
+            Text(job.error ?? "已取消").font(.caption).foregroundStyle(.secondary).lineLimit(2)
+        case .waiting:
+            Text("等待中").font(.caption).foregroundStyle(.secondary)
+        case .running:
+            Text(runningText).font(.caption).foregroundStyle(.secondary).monospacedDigit().lineLimit(1).truncationMode(.middle)
+        }
+    }
+
+    /// "压缩中 · 293.6 MB / 838.9 MB · 77.2 MB/s · 约剩余 7 秒"; a phase message such as
+    /// "正在验证完整性…" stands alone while there are no byte counts.
+    private var runningText: String {
+        let progress = job.progress
+        guard progress.totalBytes > 0 else { return progress.currentFile.isEmpty ? (job.extracting ? "解压中" : "压缩中") : progress.currentFile }
+        let bytes = { (count: Int64) in ByteCountFormatter.string(fromByteCount: count, countStyle: .file) }
+        var parts = [job.extracting ? "解压中" : "压缩中", bytes(progress.processedBytes) + " / " + bytes(progress.totalBytes)]
+        if progress.bytesPerSecond > 0 { parts.append(bytes(Int64(progress.bytesPerSecond)) + "/s") }
+        if let seconds = progress.remainingSeconds {
+            parts.append(seconds < 60 ? "约剩余 \(max(1, Int(seconds))) 秒" : "约剩余 \(Int((seconds / 60).rounded(.up))) 分钟")
+        }
+        return parts.joined(separator: " · ")
+    }
+
+    private func iconButton(_ symbol: String, _ title: String, action: @escaping () -> Void) -> some View {
+        Button(action: action) {
+            Image(systemName: symbol).font(.system(size: 13, weight: .medium))
+                .frame(width: 26, height: 26).contentShape(Rectangle())
+        }
+        .buttonStyle(.borderless).foregroundStyle(.secondary)
+        .help(title).accessibilityLabel(title)
     }
 }

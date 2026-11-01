@@ -3,8 +3,9 @@ import Foundation
 public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable {
     case zip, sevenZip, rar, tar, tarGzip, tarBzip2, tarXZ, tarZstd, gzip, bzip2, xz, zstd
     case lzip, lz4, brotli, lrzip, aar, snappy, wim, dmg, iso, zipx
-    /// Extract-only: opened by the bundled 7-Zip, or lzop for .lzo. 7-Zip returns only an
-    /// inner payload blob for .pkg/.xip (xar), .deb and .rpm, so those are deliberately absent.
+    /// CAB, CPIO, LHA, LZMA and Z are extract-only through the bundled 7-Zip; LZOP (.lzo)
+    /// is created and opened by the bundled lzop. 7-Zip returns only an inner payload blob
+    /// for .pkg/.xip (xar), .deb and .rpm, so those are deliberately absent.
     case cab, cpio, lzh, lzma, z, lzop
     public var id: String { rawValue }
     public var title: String {
@@ -22,7 +23,7 @@ public enum ArchiveFormat: String, CaseIterable, Codable, Sendable, Identifiable
     }
     public var engineType: String { self == .sevenZip ? "7z" : rawValue }
     /// Formats LiteZip can open but never writes.
-    public var extractOnly: Bool { [.zipx, .cab, .cpio, .lzh, .lzma, .z, .lzop].contains(self) }
+    public var extractOnly: Bool { [.zipx, .cab, .cpio, .lzh, .lzma, .z].contains(self) }
     /// RAR creation additionally requires a separately installed official engine.
     public var canCreate: Bool { !extractOnly }
     public var supportsPassword: Bool { [.zip, .sevenZip, .rar, .dmg].contains(self) }

@@ -35,7 +35,7 @@ struct MoreFormatsTests {
         #expect(ArchiveFormat.detect(URL(fileURLWithPath: "/not-existing/file." + suffix)) == format)
     }
 
-    @Test("Truncated standalone archives fail without partial results", arguments: [ArchiveFormat.lzip, .lz4, .brotli, .lrzip, .snappy])
+    @Test("Truncated standalone archives fail without partial results", arguments: [ArchiveFormat.lzip, .lz4, .brotli, .lrzip, .snappy, .lzop])
     func truncated(format: ArchiveFormat) async throws {
         let f = try MoreFormatFixture(); defer { f.close() }
         let source = f.root.appendingPathComponent("random.bin")
@@ -80,7 +80,7 @@ struct MoreFormatsTests {
         #expect(!FileManager.default.fileExists(atPath: output.path))
         try f.clean()
     }
-    @Test("Standalone formats round trip Unicode and empty data without changing sources", arguments: [ArchiveFormat.lzip, .lz4, .brotli, .lrzip, .snappy], [false, true])
+    @Test("Standalone formats round trip Unicode and empty data without changing sources", arguments: [ArchiveFormat.lzip, .lz4, .brotli, .lrzip, .snappy, .lzop], [false, true])
     func streams(format: ArchiveFormat, empty: Bool) async throws {
         let f = try MoreFormatFixture(); defer { f.close() }
         let source = f.root.appendingPathComponent("中文 [字]* 😀.txt")
@@ -99,7 +99,7 @@ struct MoreFormatsTests {
         try f.clean()
     }
 
-    @Test("New streams reject folders, linked files and unsupported encryption", arguments: [ArchiveFormat.lzip, .lz4, .brotli, .lrzip, .snappy])
+    @Test("New streams reject folders, linked files and unsupported encryption", arguments: [ArchiveFormat.lzip, .lz4, .brotli, .lrzip, .snappy, .lzop])
     func streamInputs(format: ArchiveFormat) async throws {
         let f = try MoreFormatFixture(); defer { f.close() }
         let file = f.root.appendingPathComponent("file")
@@ -114,7 +114,7 @@ struct MoreFormatsTests {
         try f.clean()
     }
 
-    @Test("Bounded decompression rejects oversized streams without publishing", arguments: [ArchiveFormat.lzip, .lz4, .brotli, .lrzip, .snappy])
+    @Test("Bounded decompression rejects oversized streams without publishing", arguments: [ArchiveFormat.lzip, .lz4, .brotli, .lrzip, .snappy, .lzop])
     func streamLimit(format: ArchiveFormat) async throws {
         let f = try MoreFormatFixture(); defer { f.close() }
         let file = f.root.appendingPathComponent("large.txt")

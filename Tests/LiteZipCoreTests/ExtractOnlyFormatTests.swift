@@ -29,7 +29,7 @@ private struct ExtractOnlyFixture {
 
 @Suite("Extract-only formats")
 struct ExtractOnlyFormatTests {
-    static let formats: [ArchiveFormat] = [.cab, .cpio, .lzh, .lzma, .z, .lzop]
+    static let formats: [ArchiveFormat] = [.cab, .cpio, .lzh, .lzma, .z]
 
     @Test("Extension aliases select the right format", arguments: [
         (ArchiveFormat.cab, "cab"), (.cpio, "cpio"), (.lzh, "lzh"), (.lzh, "lha"), (.lzma, "lzma"),

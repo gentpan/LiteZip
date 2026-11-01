@@ -12,10 +12,12 @@
 		2981D46AD1B270967FB05E21 /* Document-tarBzip2.png in Resources */ = {isa = PBXBuildFile; fileRef = 311488D2965F557F4DB24F8F /* Document-tarBzip2.png */; };
 		29BA4D893D461514D0CFB55E /* Document-dmg.icns in Resources */ = {isa = PBXBuildFile; fileRef = 5EA964873029BFEC69F5D6F9 /* Document-dmg.icns */; };
 		2CEB35AA5351911769E177F7 /* UpdateController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5B61364465EEBAD4AA373A25 /* UpdateController.swift */; };
+		3DD01130352A8D84827BE0CD /* MenuBarBadges.swift in Sources */ = {isa = PBXBuildFile; fileRef = B6F5878CD6D93CE76E074A4C /* MenuBarBadges.swift */; };
 		3EFF6D987CF12EB266A72EF5 /* Licenses in Resources */ = {isa = PBXBuildFile; fileRef = A99F99543B02A4B04399CE70 /* Licenses */; };
 		3F8668B2025968244C5389AD /* Document-gzip.icns in Resources */ = {isa = PBXBuildFile; fileRef = 1C1DC47AB1AFB37BB4D8E136 /* Document-gzip.icns */; };
 		3F8EC5972F2E9ED8B46E830E /* Document-tarBzip2.icns in Resources */ = {isa = PBXBuildFile; fileRef = 6A12B993307E9EF9063CCA8F /* Document-tarBzip2.icns */; };
 		3FE72AF19D8E84C0089A9374 /* Document-zip.icns in Resources */ = {isa = PBXBuildFile; fileRef = 721D3A760DA2664E354A0234 /* Document-zip.icns */; };
+		40E0E231FB2980E570B30D98 /* StatusItemIcon.swift in Sources */ = {isa = PBXBuildFile; fileRef = 93D79F680AD48909A9C0C67C /* StatusItemIcon.swift */; };
 		48FA421EF1A06447688CA6EC /* Document-tarGzip.icns in Resources */ = {isa = PBXBuildFile; fileRef = 34113D6586C8971DA64D21FA /* Document-tarGzip.icns */; };
 		4DB6556A0D5CCF4C945E924E /* Document-xz.png in Resources */ = {isa = PBXBuildFile; fileRef = 7820DB61EE16FD94BF2B985A /* Document-xz.png */; };
 		4EE35DF63ED30D80F1B0C501 /* Document-bzip2.icns in Resources */ = {isa = PBXBuildFile; fileRef = F4214D7422AC253336F396C7 /* Document-bzip2.icns */; };
@@ -23,6 +25,8 @@
 		5236E52A276A0AFC451442DB /* SourcePackages in Resources */ = {isa = PBXBuildFile; fileRef = AEC00B13C0A07181602C6D8C /* SourcePackages */; };
 		53A9A88ACF7734EFEF423EAB /* MenuBarController.swift in Sources */ = {isa = PBXBuildFile; fileRef = B76692A8C5AC8DE8A9D42E77 /* MenuBarController.swift */; };
 		56DF7359A9A5E674D57B8151 /* LiteZipFinder.appex in Embed Foundation Extensions */ = {isa = PBXBuildFile; fileRef = 7F4D4074CB82632A41D3E9EF /* LiteZipFinder.appex */; settings = {ATTRIBUTES = (RemoveHeadersOnCopy, ); }; };
+		63F44EE50549D01C504E68AB /* SettingsWindowController.swift in Sources */ = {isa = PBXBuildFile; fileRef = 8880F1F9EAB934613DC5EEC4 /* SettingsWindowController.swift */; };
+		6AD97ACCBAD31E9286664D35 /* SaveFormatChooser.swift in Sources */ = {isa = PBXBuildFile; fileRef = D2231C8F65466D440AD429BA /* SaveFormatChooser.swift */; };
 		743F75D4B82075656CB8B5B5 /* MainView.swift in Sources */ = {isa = PBXBuildFile; fileRef = 5605A8D30DB1284F17157F79 /* MainView.swift */; };
 		7B3B7C978EAF0983C8029118 /* ThirdPartyNotices.txt in Resources */ = {isa = PBXBuildFile; fileRef = 3DC6491C829D520C8B7CF2B8 /* ThirdPartyNotices.txt */; };
 		7E2A949A3ECC9E4171DDF9D6 /* Document-zip.png in Resources */ = {isa = PBXBuildFile; fileRef = 8F87D8E91DC1074339EE94A0 /* Document-zip.png */; };
@@ -32,6 +36,7 @@
 		8DFBD773249E3BC76246871C /* Document-tar.png in Resources */ = {isa = PBXBuildFile; fileRef = 4B302C197944D6B664BA2AB6 /* Document-tar.png */; };
 		9EB19BA6745F6FDA03A216E1 /* Document-tar.icns in Resources */ = {isa = PBXBuildFile; fileRef = 7E3C9E4715B800689E0A867E /* Document-tar.icns */; };
 		A9D277C1A5ACEBD79B4FDF98 /* Document-tarXZ.icns in Resources */ = {isa = PBXBuildFile; fileRef = 0FEEF005F6C074064DAED885 /* Document-tarXZ.icns */; };
+		AAAF40CEA521A1CC79590938 /* FormFields.swift in Sources */ = {isa = PBXBuildFile; fileRef = 151DF79D329A1D2EFE72A8CE /* FormFields.swift */; };
 		B0581B05B746BDDFBE81B54F /* Document-split.png in Resources */ = {isa = PBXBuildFile; fileRef = 5487FBA36A179832AD75116A /* Document-split.png */; };
 		B613E03DEE476F65F65DC909 /* StatusItemDropTarget.swift in Sources */ = {isa = PBXBuildFile; fileRef = A6BCDFC52095C1E9CB331328 /* StatusItemDropTarget.swift */; };
 		B697998EC6E4F0736D8A8A39 /* Document-sevenZip.icns in Resources */ = {isa = PBXBuildFile; fileRef = ACF8384CBB477A373189EB2F /* Document-sevenZip.icns */; };
@@ -87,6 +92,7 @@
 		03D86F5FB39620AD6B35A4B1 /* Document-zipx.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-zipx.icns"; sourceTree = "<group>"; };
 		0EC6913B7859ACFFAFC599A0 /* FinderSync.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FinderSync.swift; sourceTree = "<group>"; };
 		0FEEF005F6C074064DAED885 /* Document-tarXZ.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-tarXZ.icns"; sourceTree = "<group>"; };
+		151DF79D329A1D2EFE72A8CE /* FormFields.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = FormFields.swift; sourceTree = "<group>"; };
 		158D46194BA192607BF41A1E /* Document-zipx.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Document-zipx.png"; sourceTree = "<group>"; };
 		1C1DC47AB1AFB37BB4D8E136 /* Document-gzip.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-gzip.icns"; sourceTree = "<group>"; };
 		1CF775459AE87452E2015E65 /* LiteZIP */ = {isa = PBXFileReference; lastKnownFileType = folder; name = LiteZIP; path = .; sourceTree = SOURCE_ROOT; };
@@ -113,7 +119,9 @@
 		7820DB61EE16FD94BF2B985A /* Document-xz.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Document-xz.png"; sourceTree = "<group>"; };
 		7E3C9E4715B800689E0A867E /* Document-tar.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-tar.icns"; sourceTree = "<group>"; };
 		7F4D4074CB82632A41D3E9EF /* LiteZipFinder.appex */ = {isa = PBXFileReference; explicitFileType = "wrapper.app-extension"; includeInIndex = 0; path = LiteZipFinder.appex; sourceTree = BUILT_PRODUCTS_DIR; };
+		8880F1F9EAB934613DC5EEC4 /* SettingsWindowController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SettingsWindowController.swift; sourceTree = "<group>"; };
 		8F87D8E91DC1074339EE94A0 /* Document-zip.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Document-zip.png"; sourceTree = "<group>"; };
+		93D79F680AD48909A9C0C67C /* StatusItemIcon.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = StatusItemIcon.swift; sourceTree = "<group>"; };
 		96BDCB153006FC4B63A6465C /* build-format-engines.sh */ = {isa = PBXFileReference; lastKnownFileType = text.script.sh; path = "build-format-engines.sh"; sourceTree = "<group>"; };
 		9D6C92C88B11D216E45D5D8E /* Document-tarXZ.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Document-tarXZ.png"; sourceTree = "<group>"; };
 		A2EC2BC91160F234D699D07E /* Document-sevenZip.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Document-sevenZip.png"; sourceTree = "<group>"; };
@@ -125,11 +133,13 @@
 		AEC00B13C0A07181602C6D8C /* SourcePackages */ = {isa = PBXFileReference; lastKnownFileType = folder; name = SourcePackages; path = Vendor/Formats/SourcePackages; sourceTree = SOURCE_ROOT; };
 		B490BC42517DCDD1D66C7E4A /* Document-zstd.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Document-zstd.png"; sourceTree = "<group>"; };
 		B5CC7D53431ACB3703590F17 /* Document-tarZstd.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Document-tarZstd.png"; sourceTree = "<group>"; };
+		B6F5878CD6D93CE76E074A4C /* MenuBarBadges.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarBadges.swift; sourceTree = "<group>"; };
 		B76692A8C5AC8DE8A9D42E77 /* MenuBarController.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = MenuBarController.swift; sourceTree = "<group>"; };
 		C6BE011AD99D4B726C48043B /* Document-rar.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-rar.icns"; sourceTree = "<group>"; };
 		CA0C6EF037E2D12C88A6A410 /* JobNotifier.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = JobNotifier.swift; sourceTree = "<group>"; };
 		CA737FA2EEA14607D03C105A /* Document-gzip.png */ = {isa = PBXFileReference; lastKnownFileType = image.png; path = "Document-gzip.png"; sourceTree = "<group>"; };
 		CCD1CD7AB4BA12B128BDE847 /* AppIcon.icon */ = {isa = PBXFileReference; lastKnownFileType = wrapper.icon; path = AppIcon.icon; sourceTree = "<group>"; };
+		D2231C8F65466D440AD429BA /* SaveFormatChooser.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = SaveFormatChooser.swift; sourceTree = "<group>"; };
 		E52BE33C72B2FE793C0972C6 /* Document-tarZstd.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-tarZstd.icns"; sourceTree = "<group>"; };
 		E8A76FA8A6E7C96A7EF35897 /* LiteZipApp.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = LiteZipApp.swift; sourceTree = "<group>"; };
 		F4214D7422AC253336F396C7 /* Document-bzip2.icns */ = {isa = PBXFileReference; lastKnownFileType = image.icns; path = "Document-bzip2.icns"; sourceTree = "<group>"; };
@@ -217,12 +227,17 @@
 				566B6612429758F32E497C05 /* AppModel.swift */,
 				3E943D630D176C0DF05FEE7E /* ArchiveBrowserView.swift */,
 				218566766E9CE76F0C7A7CF7 /* ArchiveFormatIcons.swift */,
+				151DF79D329A1D2EFE72A8CE /* FormFields.swift */,
 				CA0C6EF037E2D12C88A6A410 /* JobNotifier.swift */,
 				E8A76FA8A6E7C96A7EF35897 /* LiteZipApp.swift */,
 				5605A8D30DB1284F17157F79 /* MainView.swift */,
+				B6F5878CD6D93CE76E074A4C /* MenuBarBadges.swift */,
 				B76692A8C5AC8DE8A9D42E77 /* MenuBarController.swift */,
+				D2231C8F65466D440AD429BA /* SaveFormatChooser.swift */,
 				523966E6CBF0EBF55AAE61B6 /* SettingsView.swift */,
+				8880F1F9EAB934613DC5EEC4 /* SettingsWindowController.swift */,
 				A6BCDFC52095C1E9CB331328 /* StatusItemDropTarget.swift */,
+				93D79F680AD48909A9C0C67C /* StatusItemIcon.swift */,
 				5B61364465EEBAD4AA373A25 /* UpdateController.swift */,
 			);
 			path = LiteZipApp;
@@ -478,12 +493,17 @@
 				8A80261459B5F4F28BB00DEC /* AppModel.swift in Sources */,
 				BB74C5A17881CB1CF6D00A81 /* ArchiveBrowserView.swift in Sources */,
 				D4E48224268E74CC2FE8F9A3 /* ArchiveFormatIcons.swift in Sources */,
+				AAAF40CEA521A1CC79590938 /* FormFields.swift in Sources */,
 				EDD9F93053E466035A3C0EB5 /* JobNotifier.swift in Sources */,
 				FC644EAD99535E74158FDBC1 /* LiteZipApp.swift in Sources */,
 				743F75D4B82075656CB8B5B5 /* MainView.swift in Sources */,
+				3DD01130352A8D84827BE0CD /* MenuBarBadges.swift in Sources */,
 				53A9A88ACF7734EFEF423EAB /* MenuBarController.swift in Sources */,
+				6AD97ACCBAD31E9286664D35 /* SaveFormatChooser.swift in Sources */,
 				D205AF9048D386CE9E33BD05 /* SettingsView.swift in Sources */,
+				63F44EE50549D01C504E68AB /* SettingsWindowController.swift in Sources */,
 				B613E03DEE476F65F65DC909 /* StatusItemDropTarget.swift in Sources */,
+				40E0E231FB2980E570B30D98 /* StatusItemIcon.swift in Sources */,
 				2CEB35AA5351911769E177F7 /* UpdateController.swift in Sources */,
 			);
 			runOnlyForDeploymentPostprocessing = 0;
@@ -552,7 +572,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEBUG_INFORMATION_FORMAT = "dwarf-with-dsym";
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_NS_ASSERTIONS = NO;
@@ -566,7 +586,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.6.1;
+				MARKETING_VERSION = 0.6.2;
 				MTL_ENABLE_DEBUG_INFO = NO;
 				MTL_FAST_MATH = YES;
 				PRODUCT_NAME = "$(TARGET_NAME)";
@@ -670,7 +690,7 @@
 				CLANG_WARN__DUPLICATE_METHOD_MATCH = YES;
 				CODE_SIGN_STYLE = Manual;
 				COPY_PHASE_STRIP = NO;
-				CURRENT_PROJECT_VERSION = 7;
+				CURRENT_PROJECT_VERSION = 8;
 				DEBUG_INFORMATION_FORMAT = dwarf;
 				ENABLE_HARDENED_RUNTIME = YES;
 				ENABLE_STRICT_OBJC_MSGSEND = YES;
@@ -690,7 +710,7 @@
 				GCC_WARN_UNUSED_FUNCTION = YES;
 				GCC_WARN_UNUSED_VARIABLE = YES;
 				MACOSX_DEPLOYMENT_TARGET = 13.0;
-				MARKETING_VERSION = 0.6.1;
+				MARKETING_VERSION = 0.6.2;
 				MTL_ENABLE_DEBUG_INFO = INCLUDE_SOURCE;
 				MTL_FAST_MATH = YES;
 				ONLY_ACTIVE_ARCH = YES;

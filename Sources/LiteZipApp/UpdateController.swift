@@ -7,7 +7,33 @@ final class UpdateController: ObservableObject {
     static let shared = UpdateController()
     @Published private(set) var checking = false
     @Published private(set) var lastChecked = UserDefaults.standard.object(forKey: "lastUpdateCheck") as? Date
+    /// The newest release above the running version, once a check has found one. It is
+    /// remembered across launches, since automatic checks run at most once a day; the menu
+    /// bar's version capsule turns green while it is set.
+    @Published private(set) var availableRelease: UpdateCheck.Release?
     var currentVersion: String { Bundle.main.object(forInfoDictionaryKey: "CFBundleShortVersionString") as? String ?? "0" }
+
+    init() {
+        let defaults = UserDefaults.standard
+        if let tag = defaults.string(forKey: "availableUpdateTag"),
+           let url = defaults.url(forKey: "availableUpdateURL") {
+            let release = UpdateCheck.Release(tagName: tag, htmlURL: url)
+            if UpdateCheck.isNewer(release.version, than: currentVersion) { availableRelease = release } else { remember(nil) }
+        }
+    }
+
+    private func remember(_ release: UpdateCheck.Release?) {
+        availableRelease = release
+        UserDefaults.standard.set(release?.tagName, forKey: "availableUpdateTag")
+        UserDefaults.standard.set(release?.htmlURL, forKey: "availableUpdateURL")
+    }
+
+    /// The version capsule's action while it is green. Later this is where an automatic
+    /// install would start; for now it offers the release page.
+    func presentAvailableUpdate() {
+        guard let availableRelease else { return check(userInitiated: true) }
+        offer(availableRelease, userInitiated: true)
+    }
 
     /// Automatic checks run at most once a day and stay silent unless a new version exists.
     func checkOnLaunchIfNeeded(enabled: Bool) {
@@ -30,9 +56,12 @@ final class UpdateController: ObservableObject {
             lastChecked = now
             UserDefaults.standard.set(now, forKey: "lastUpdateCheck")
             guard let release = UpdateCheck.newestRelease(in: releases, newerThan: currentVersion) else {
+                remember(nil)
                 if userInitiated { inform("LiteZip 已是最新版本", "当前版本 \(currentVersion)。") }
                 return
             }
+            // A skipped version gets no alert, but the capsule still shows it quietly.
+            remember(release)
             if !userInitiated && UserDefaults.standard.string(forKey: "skippedUpdateVersion") == release.version { return }
             offer(release, userInitiated: userInitiated)
         }

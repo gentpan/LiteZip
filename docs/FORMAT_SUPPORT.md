@@ -1,8 +1,8 @@
 # Archive formats
 
 LiteZip opens every format below. Since 0.6.2 the creation menu offers only ZIP, 7Z,
-RAR, the TAR family, DMG and ISO; the single-file stream formats, AAR, WIM, ZIPX and
-the legacy formats are extract-only. All formats have named color badges in the main
+RAR, the TAR family, DMG, ISO and LZOP; the other single-file stream formats, AAR, WIM,
+ZIPX and the legacy formats are extract-only. All formats have named color badges in the main
 window and menu-bar panel.
 
 | Format | Extension | Creation and extraction |
@@ -20,7 +20,7 @@ window and menu-bar panel.
 | ZIPX | .zipx | Extraction of methods supported by bundled 7-Zip |
 | CAB, CPIO, LHA | .cab, .cpio, .lzh / .lha | Extract only; multiple files and folders through bundled 7-Zip. LHA symbolic links (stored as `name\|target`) are rejected |
 | LZMA, Z | .lzma, .Z | Extract only; one stream through bundled 7-Zip, output named after the archive. `.Z` has no length or checksum, so a truncated stream cannot be detected |
-| LZOP | .lzo | Extract only; one stream through bundled lzop 1.04 (GPL 2+, built from the unmodified source) |
+| LZOP | .lzo | One regular file per stream, created and extracted by bundled lzop 1.04 (GPL 2+, built from the unmodified source); levels 1–9, no store level |
 
 `.pkg`/`.xip` (XAR), `.deb` and `.rpm` are deliberately not claimed: bundled 7-Zip
 opens them one level too deep and returns only the inner payload blob (for a real

@@ -128,3 +128,15 @@
 - 最终 ZIP 大小 38,058,344 字节，SHA-256：`ebcf40669b7ef5866105cbbaef00f5dd706568f01d77a73b19464bcd71a8ffef`。
 - 包内 `ThirdPartyNotices.txt`、`README.md` 与 `SourcePackages` 均对应 Brotli 1.2.1。
 - 未实际验证：Finder 右键菜单在已安装 App 中的显示与操作；RAR 官方引擎的实际下载与运行。本次保持开发预览标记。
+
+## 0.6.2 发布验证
+
+- Release 通用构建成功，主程序与 Finder 扩展同时包含 arm64 与 x86_64，Info.plist 为 0.6.2（build 8），`LSUIElement` 为 true。
+- 核心测试 60 项、9 组全部通过，其中包括新增仅解压格式（CAB、CPIO、LZH、LZMA、Z）与 LZOP 的往返、截断、损坏、符号链接拒绝和解压上限用例；菜单栏拖放输入检查与发布脚本 4 组检查通过。
+- 7-Zip 26.05 官方 macOS 包 SHA-256 `12ef6830317743cfd3f0ab1724bde43fcc270d8b6d8564f8c12c2a2b7f993570` 与 GitHub 记录的摘要一致；lzop 1.04 源码包 SHA-256 `7e72b62a8a60aff5200a047eea0773a8fb205caf7acbe1774d95147f305a2f41` 由官方站点与 Debian 镜像两处比对一致。
+- Apple 公证提交 `d17d8b9d-41f2-4325-a1dd-51e1a1962e91` 返回 `Accepted`（Ready for distribution），日志 issues 为 None；`stapler staple` 与 `validate` 通过。
+- 对最终 ZIP 重新解包，严格签名、公证凭据及 Gatekeeper 检查均通过，来源 `Notarized Developer ID`；八个内置引擎均为 Developer ID 签名并启用 Hardened Runtime；Finder 扩展带沙盒权限；包内第三方声明包含 7-Zip 26.05 与 LZOP 1.04。
+- 安装发布包后启动，系统登记为菜单栏代理（UIElement），没有 Dock 图标闪现；系统中只登记 `/Applications` 下这一份 LiteZip。
+- 本机构建中逐项截图核对：主窗口与选项面板（深浅色）、任务卡片与竖条进度条（真实压缩，深浅色各一次）、菜单栏图标与进度圆环、设置五页、关于页。`litezip://` 解压、压缩与设置链接不再弹出主窗口；「在 LiteZip 中打开…」与用 LiteZip 打开普通文件仍会显示主窗口，均已实测。
+- 最终 ZIP 大小 39,042,080 字节，SHA-256：`4c5c5f8d53fc87d7921d585396db4c62928c58691f2ca49fb5fb6c759df5be59`。
+- 未实际验证：菜单栏弹窗本身（无法自动点开，布局以离屏渲染核对）；快捷压缩保存框里的格式选择（以独立程序核对菜单内容与禁用项）；「登录时自动启动」在实际重新登录后的效果；RAR 官方引擎的实际下载与运行；Intel 真机。本次保持开发预览标记。

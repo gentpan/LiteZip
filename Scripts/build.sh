@@ -24,5 +24,7 @@ test -f build/LiteZip.app/Contents/Resources/Licenses/lzop.txt
 test -f build/LiteZip.app/Contents/Resources/SourcePackages/lzop-1.04.tar.gz
 
 test "$(/usr/libexec/PlistBuddy -c 'Print :NSExtension:NSExtensionPointIdentifier' build/LiteZip.app/Contents/PlugIns/LiteZipFinder.appex/Contents/Info.plist)" = 'com.apple.FinderSync'
-test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' build/LiteZip.app/Contents/Info.plist)" = '0.6.1'
+test "$(/usr/libexec/PlistBuddy -c 'Print :CFBundleShortVersionString' build/LiteZip.app/Contents/Info.plist)" = '0.6.2'
+# Menu-bar-first launch: without LSUIElement the Dock icon flashes on every start.
+test "$(/usr/libexec/PlistBuddy -c 'Print :LSUIElement' build/LiteZip.app/Contents/Info.plist)" = 'true'
 test "$(/usr/libexec/PlistBuddy -c 'Print :UTExportedTypeDeclarations:0:UTTypeTagSpecification:public.filename-extension:0' build/LiteZip.app/Contents/Info.plist)" = '001'

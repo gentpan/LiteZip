@@ -24,6 +24,8 @@ final class AppDelegate: NSObject, NSApplicationDelegate {
     private func suppressLaunchWindow() {
         Task { @MainActor in
             for _ in 0..<1000 {
+                // A window that already holds files (opened with LiteZip at launch) stays.
+                if !AppModel.shared.files.isEmpty || AppModel.shared.browserURL != nil { return }
                 if let window = NSApp.windows.first(where: { $0.canBecomeMain }) {
                     // Zero opacity kills the launch flash; restore it once the window is
                     // off-screen so the same instance SwiftUI reuses for an on-demand
@@ -95,10 +97,18 @@ struct LiteZipApp: App {
     @ObservedObject private var preferences = AppModel.shared.preferences
     var body: some Scene {
         // SwiftUI opens this Window at launch even in menu-bar mode, so suppressLaunchWindow
-        // hides that first instance; "更多格式…"/Finder actions reopen it on demand.
+        // hides that first instance; Finder actions and the menu bar reopen it on demand.
         Window("LiteZip", id: "main") { MainView(model: model).environmentObject(model.preferences) }
             .defaultSize(width: 560, height: 460)
+            // Links and opened files go to the app delegate only. Otherwise SwiftUI builds this
+            // window to receive every litezip:// action (Finder extract, compress, settings);
+            // AppModel opens it explicitly where a window is wanted.
+            .handlesExternalEvents(matching: [])
             .commands {
+                // LiteZip manages its own settings window; see SettingsWindowController.
+                CommandGroup(replacing: .appSettings) {
+                    Button("设置…") { SettingsWindowController.shared.show() }.keyboardShortcut(",")
+                }
                 CommandGroup(after: .appInfo) {
                     Button("检查更新…") { UpdateController.shared.check(userInitiated: true) }
                 }
@@ -124,6 +134,5 @@ struct LiteZipApp: App {
                     Button("反馈问题…") { NSWorkspace.shared.open(URL(string: "https://litezip.app/feedback/")!) }
                 }
             }
-        Settings { SettingsView(preferences: model.preferences) }
     }
 }

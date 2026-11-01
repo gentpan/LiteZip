@@ -20,6 +20,7 @@ extension ArchiveService {
         case .lz4: args = ["-q", "-c", "-\(level)", "--", source.path]
         case .brotli: args = ["-c", "-q", String(level), "--", source.path]
         case .snappy: args = ["-c", "--", source.path]
+        case .lzop: args = ["-q", "-c", "-\(level)", "--", source.path]
         default: throw ArchiveError.unsupportedFormat
         }
         let fd = open(destination.path, O_WRONLY | O_CREAT | O_EXCL | O_NOFOLLOW, 0o600)

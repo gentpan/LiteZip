@@ -30,12 +30,19 @@ final class AppPreferences: ObservableObject {
     /// so hiding the Dock only applies while the menu bar entry is on.
     func applyDockIcon() {
         let policy: NSApplication.ActivationPolicy = showsDockIcon || !showsMenuBar ? .regular : .accessory
-        if NSApp.activationPolicy() != policy { NSApp.setActivationPolicy(policy) }
+        guard NSApp.activationPolicy() != policy else { return }
+        NSApp.setActivationPolicy(policy)
+        // Info.plist marks LiteZip as an agent (LSUIElement) so a normal launch never flashes a
+        // Dock icon. An app promoted to .regular is not frontmost by itself, so bring it forward.
+        if policy == .regular { NSApp.activate(ignoringOtherApps: true) }
     }
     @Published var defaultFormat: ArchiveFormat { didSet { UserDefaults.standard.set(defaultFormat.rawValue, forKey: "format") } }
     @Published var showsMenuBar: Bool { didSet { UserDefaults.standard.set(showsMenuBar, forKey: "showsMenuBar"); applyDockIcon() } }
     @Published var showsDockIcon: Bool { didSet { UserDefaults.standard.set(showsDockIcon, forKey: "showsDockIcon"); applyDockIcon() } }
     @Published var menuBarAskDestination: Bool { didSet { UserDefaults.standard.set(menuBarAskDestination, forKey: "menuBarAskDestination") } }
+    /// Starting values for the main window's option checkboxes; the panel changes only the session.
+    @Published var defaultExcludeMacResources: Bool { didSet { UserDefaults.standard.set(defaultExcludeMacResources, forKey: "excludeMacResources") } }
+    @Published var defaultVerifyArchive: Bool { didSet { UserDefaults.standard.set(defaultVerifyArchive, forKey: "verifyArchive") } }
     /// Folded by default so the main window opens on the drop area and tasks alone.
     @Published var showsInspector: Bool { didSet { UserDefaults.standard.set(showsInspector, forKey: "showsInspector") } }
     @Published var level: CompressionLevel { didSet { UserDefaults.standard.set(level.rawValue, forKey: "level") } }
@@ -57,6 +64,8 @@ final class AppPreferences: ObservableObject {
         // lands in the status item rather than a desktop window.
         showsDockIcon = defaults.object(forKey: "showsDockIcon") as? Bool ?? false
         menuBarAskDestination = defaults.bool(forKey: "menuBarAskDestination")
+        defaultExcludeMacResources = defaults.object(forKey: "excludeMacResources") as? Bool ?? true
+        defaultVerifyArchive = defaults.object(forKey: "verifyArchive") as? Bool ?? true
         showsInspector = defaults.object(forKey: "showsInspector") as? Bool ?? false
         appearance = AppAppearance(rawValue: defaults.string(forKey: "appearance") ?? "跟随系统") ?? .system
         let format = ArchiveFormat(rawValue: defaults.string(forKey: "format") ?? "zip") ?? .zip
@@ -111,14 +120,16 @@ final class AppModel: ObservableObject {
     @Published var passwordConfirmation = ""
     @Published var showPassword = false
     @Published var volumeSize = ""
-    @Published var excludeMacResources = true
-    @Published var verifyArchive = true
+    @Published var excludeMacResources = UserDefaults.standard.object(forKey: "excludeMacResources") as? Bool ?? true
+    @Published var verifyArchive = UserDefaults.standard.object(forKey: "verifyArchive") as? Bool ?? true
     @Published var separateArchives = false
     @Published var errorMessage: String?
     /// Preview browser target; the main window presents it as a sheet.
     @Published var browserURL: URL?
     /// Captured from MainView so Finder actions can raise the on-demand main window.
     var openMainWindow: (() -> Void)?
+    /// Lets the menu bar popover follow a format picked in the quick compress save panel.
+    var onQuickFormatChange: ((ArchiveFormat) -> Void)?
     /// Counted by MainView so Finder actions do not open a second main window.
     var visibleMainWindows = 0
     /// Last application the user was in before LiteZip got activated by a URL open.
@@ -282,6 +293,8 @@ final class AppModel: ObservableObject {
         let valid = urls.filter { $0.isFileURL && FileManager.default.fileExists(atPath: $0.path) }
         guard !valid.isEmpty else { return }
         files = Array(NSOrderedSet(array: valid)) as? [URL] ?? valid
+        // SwiftUI no longer builds the window for opened files, so show it here.
+        openMainWindow?()
         NSApp.activate(ignoringOtherApps: true)
     }
     /// The single extraction path: right-click, drops, double-click, retry and the
@@ -333,7 +346,7 @@ final class AppModel: ObservableObject {
     func chooseFiles() {
         let panel = NSOpenPanel()
         panel.allowsMultipleSelection = true; panel.canChooseDirectories = true; panel.canChooseFiles = true
-        panel.message = "选择要压缩的文件，或要解压的压缩包"
+        panel.message = "选择要压缩的文件或文件夹，或要解压的压缩包"
         present(panel) { [weak self] response in
             if response == .OK { self?.receive(panel.urls) }
         }
@@ -352,7 +365,7 @@ final class AppModel: ObservableObject {
         let panel = NSOpenPanel()
         panel.title = "LiteZip"; panel.prompt = "下一步"
         panel.allowsMultipleSelection = true; panel.canChooseFiles = true; panel.canChooseDirectories = true
-        panel.message = "选择要压缩的文件，或要解压的压缩包"
+        panel.message = "选择要压缩的文件或文件夹，或要解压的压缩包"
         NSApp.activate(ignoringOtherApps: true)
         present(panel, standalone: true) { [weak self] response in
             guard let self, response == .OK else { return }
@@ -368,35 +381,69 @@ final class AppModel: ObservableObject {
               inputs.allSatisfy({ $0.isFileURL && FileManager.default.fileExists(atPath: $0.path) }) else {
             reportError("请拖入本地文件或文件夹，一次最多选择 1000 项。"); return
         }
-        guard format.canCreate else { reportError("此格式仅支持解压。"); return }
-        if format.singleFileOnly && (inputs.count != 1 || (try? inputs[0].resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) != true) {
-            reportError("\(format.title) 只能压缩单个普通文件。文件夹或多个文件请选择 ZIP、7Z 或 TAR.GZ。"); return
+        if let problem = quickCompressProblem(inputs, format: format) { reportError(problem); return }
+        let proposedName = { (format: ArchiveFormat) in
+            inputs.count == 1 ? CompressionPlanning.name(for: inputs[0], format: format) : "Archive." + format.suffix
         }
-        if format == .rar && preferences.rarURL == nil { reportError(ArchiveError.rarEngineMissing.localizedDescription); return }
-        if [.rar, .dmg, .iso, .aar].contains(format) {
-            let names = inputs.map { $0.lastPathComponent.precomposedStringWithCanonicalMapping.lowercased() }
-            guard Set(names).count == names.count else { reportError("\(format.title) 中的顶层项目不能同名，请修改名称后重试。"); return }
-        }
-        let level = preferences.level == .store && !format.supportsStore ? CompressionLevel.normal : preferences.level
-        let options = CompressionOptions(format: format, level: level,
-            excludeMacResources: excludeMacResources, verifyArchive: verifyArchive)
-        let name = inputs.count == 1 ? CompressionPlanning.name(for: inputs[0], format: format) : "Archive." + format.suffix
         if !preferences.menuBarAskDestination {
-            enqueue(files: inputs, destination: inputs[0].deletingLastPathComponent().appendingPathComponent(name), extracting: false, options: options, reveal: false)
+            enqueue(files: inputs, destination: inputs[0].deletingLastPathComponent().appendingPathComponent(proposedName(format)), extracting: false, options: quickOptions(format), reveal: false)
             return
         }
         let panel = NSSavePanel()
-        panel.title = "快捷压缩 · \(format.title)"; panel.prompt = "压缩"
+        panel.prompt = "压缩"
         panel.canCreateDirectories = true
-        panel.nameFieldStringValue = name
+        panel.nameFieldStringValue = proposedName(format)
         panel.directoryURL = inputs[0].deletingLastPathComponent()
-        panel.message = "\(inputs.count) 个项目 · \(level.title)压缩 · 不加密。需要密码或分卷请使用主窗口。"
+        let describe = { [weak panel, weak self] (format: ArchiveFormat) in
+            guard let panel, let self else { return }
+            panel.title = "快捷压缩 · \(format.title)"
+            panel.message = "\(inputs.count) 个项目 · \(self.quickOptions(format).level.title)压缩 · 不加密。需要密码或分卷请使用主窗口。"
+        }
+        describe(format)
+        // The format can still change here; an untouched name follows it, an edited one
+        // only swaps its extension.
+        let chooser = SaveFormatChooser(selected: format) { [weak self] in self?.quickCompressProblem(inputs, format: $0) == nil }
+        chooser.onChange = { [weak panel] old, new in
+            guard let panel else { return }
+            var name = panel.nameFieldStringValue
+            if name == proposedName(old) { name = proposedName(new) }
+            else {
+                if name.lowercased().hasSuffix("." + old.suffix) { name.removeLast(old.suffix.count + 1) }
+                name += "." + new.suffix
+            }
+            panel.nameFieldStringValue = name
+            describe(new)
+        }
+        panel.accessoryView = chooser.view
         NSApp.activate(ignoringOtherApps: true)
         present(panel, standalone: true) { [weak self] response in
             guard let self, response == .OK, let url = panel.url else { return }
+            let format = chooser.selected
+            if let problem = self.quickCompressProblem(inputs, format: format) { reportError(problem); return }
+            self.onQuickFormatChange?(format)
             let destination = url.lastPathComponent.lowercased().hasSuffix("." + format.suffix) ? url : url.appendingPathExtension(format.suffix)
-            self.enqueue(files: inputs, destination: destination, extracting: false, options: options, reveal: false)
+            self.enqueue(files: inputs, destination: destination, extracting: false, options: self.quickOptions(format), reveal: false)
         }
+    }
+
+    /// Why `format` cannot take `inputs` in a quick compress, or nil when it can. The
+    /// save panel uses the same rules to disable formats in its format menu.
+    private func quickCompressProblem(_ inputs: [URL], format: ArchiveFormat) -> String? {
+        guard format.canCreate else { return "此格式仅支持解压。" }
+        if format.singleFileOnly && (inputs.count != 1 || (try? inputs[0].resourceValues(forKeys: [.isRegularFileKey]).isRegularFile) != true) {
+            return "\(format.title) 只能压缩单个普通文件。文件夹或多个文件请选择 ZIP、7Z 或 TAR.GZ。"
+        }
+        if format == .rar && preferences.rarURL == nil { return ArchiveError.rarEngineMissing.localizedDescription }
+        if [.rar, .dmg, .iso, .aar].contains(format) {
+            let names = inputs.map { $0.lastPathComponent.precomposedStringWithCanonicalMapping.lowercased() }
+            guard Set(names).count == names.count else { return "\(format.title) 中的顶层项目不能同名，请修改名称后重试。" }
+        }
+        return nil
+    }
+
+    private func quickOptions(_ format: ArchiveFormat) -> CompressionOptions {
+        let level = preferences.level == .store && !format.supportsStore ? CompressionLevel.normal : preferences.level
+        return CompressionOptions(format: format, level: level, excludeMacResources: excludeMacResources, verifyArchive: verifyArchive)
     }
     /// Compress-only: choose a destination and enqueue. Extraction has no destination
     /// dialog of its own — it goes straight to the archive's folder via extractNow.
@@ -532,6 +579,11 @@ final class AppModel: ObservableObject {
     }
     private func handleFinder(_ url: URL) {
         guard let components = URLComponents(url: url, resolvingAgainstBaseURL: false), let action = components.host else { return }
+        // litezip://settings[?tab=general|compress|extract|associations|about] opens the settings window.
+        if action == "settings" {
+            SettingsWindowController.shared.show(tab: components.queryItems?.first { $0.name == "tab" }?.value)
+            return
+        }
         let rawFiles = (components.queryItems ?? []).filter { $0.name == "file" }.compactMap { $0.value }.map { URL(fileURLWithPath: $0) }
         let files = Array(NSOrderedSet(array: rawFiles.map { action.hasPrefix("extract") ? ArchiveFormat.firstVolume($0) ?? $0 : $0 })) as? [URL] ?? rawFiles
         guard !files.isEmpty, files.count <= 1000 else { return }

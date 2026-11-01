@@ -22,9 +22,19 @@ LITEZIP_LARGE_TESTS=1 swift test  # 包括真实 1 GiB 文件的流式往返，�
 LITEZIP_RAR_TEST_ENGINE='/absolute/path/to/rar' swift test  # 可选官方 RAR 集成测试
 ```
 
+## 本地安装测试
+
+只在本机使用、还不发布时，用一条命令构建当前代码并替换 `/Applications/LiteZip.app`，系统里始终只保留这一份：
+
+```sh
+Scripts/install-local.sh
+```
+
+会像发布一样用本机唯一的 Developer ID Application 身份签名内置引擎、Finder 扩展（含沙盒权限）和 App，但不公证、不打包（那是 `Scripts/sign.sh`，用于发布）；没有该身份时保留工程自带的本地临时签名。版本号保持工程当前设置，不会改动。构建失败不会动已安装的版本；正在运行的旧版会被终止，未完成的任务会中断。设置 `LITEZIP_NO_LAUNCH=1` 则只安装、不打开。Finder 右键菜单没有更新时，执行 `killall Finder`。
+
 ## 签名与公证
 
-发布的 **0.6.1 已完成 Developer ID 签名与 Apple 公证**，ZIP 内的 App 已附上公证凭据。重新解包后，签名、公证凭据和 Gatekeeper 检查均通过。公证用于从 GitHub 等渠道分发，不代表上架 Mac App Store。
+发布的 **0.6.2 已完成 Developer ID 签名与 Apple 公证**，ZIP 内的 App 已附上公证凭据。重新解包后，签名、公证凭据和 Gatekeeper 检查均通过。公证用于从 GitHub 等渠道分发，不代表上架 Mac App Store。
 
 本机发布只需构建后执行签名脚本；它会自动提交公证、附上凭据、验证并打包：
 

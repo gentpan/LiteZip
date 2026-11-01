@@ -1,26 +1,38 @@
 import AppKit
+import SwiftUI
 import LiteZipCore
 
 extension ArchiveFormat {
-    /// Menus show only everyday formats; the full list lives grouped in the options
-    /// panel so the format menu never becomes a 21-row wall.
-    static let commonFormats: [ArchiveFormat] = [.zip, .sevenZip, .rar, .tarGzip]
-    /// Creation is offered only for formats people actually produce. Single-file
+    /// Creation is offered only for formats people actually produce. Other single-file
     /// compressors and niche images stay extract-only in the UI; the engines keep
     /// full support, so archives in those formats still open.
-    static let creatableFormats: [ArchiveFormat] = [.zip, .sevenZip, .rar, .tar, .tarGzip, .tarBzip2, .tarXZ, .tarZstd, .dmg, .iso]
+    static let creatableFormats: [ArchiveFormat] = [.zip, .sevenZip, .rar, .tar, .tarGzip, .tarBzip2, .tarXZ, .tarZstd, .dmg, .iso, .lzop]
     var offersCreation: Bool { Self.creatableFormats.contains(self) }
+    /// Every creatable format, by family: the format menus of the main window and the menu bar.
     static let groupedFormats: [(title: String, formats: [ArchiveFormat])] = [
         ("常用", [.zip, .sevenZip, .rar, .tarGzip]),
         ("TAR 家族", [.tar, .tarBzip2, .tarXZ, .tarZstd]),
-        ("磁盘映像", [.dmg, .iso])
+        ("磁盘映像", [.dmg, .iso]),
+        ("单个文件", [.lzop])
     ]
 
-    @MainActor var menuBadge: NSImage { ArchiveBadgeCache.images[rawValue]! }
-
-    /// Finder-style document icon for the format, used by the format menus and selector.
-    /// Falls back to the coloured badge for the few formats without dedicated artwork.
-    @MainActor var fileIcon: NSImage { ArchiveFileIconCache.icon(for: self) }
+    /// The colour of the format's badge (see FormatBadge); every format has one.
+    var badgeColor: Color {
+        let hex = Self.badgeColors[self]!
+        return Color(red: Double((hex >> 16) & 255) / 255, green: Double((hex >> 8) & 255) / 255, blue: Double(hex & 255) / 255)
+    }
+    private static let badgeColors: [ArchiveFormat: UInt32] = [
+        .zip: 0x1D4ED8, .sevenZip: 0x6D28D9, .rar: 0xBE123C,
+        .tar: 0x475569, .tarGzip: 0x047857, .tarBzip2: 0x0E7490,
+        .tarXZ: 0x4338CA, .tarZstd: 0xC2410C,
+        .gzip: 0x15803D, .bzip2: 0x0369A1, .xz: 0x7E22CE,
+        .zstd: 0xA16207, .dmg: 0x92400E, .zipx: 0xA21CAF,
+        .lzip: 0x9D174D, .lz4: 0x365314, .brotli: 0x166534,
+        .lrzip: 0x4C1D95, .aar: 0x334155, .snappy: 0xB45309,
+        .wim: 0x075985, .iso: 0x52525B,
+        .cab: 0x9A3412, .cpio: 0x57534E, .lzh: 0x0F766E,
+        .lzma: 0x1E3A8A, .z: 0xB91C1C, .lzop: 0x854D0E
+    ]
 
     var menuSummary: String {
         switch self {
@@ -41,58 +53,28 @@ extension ArchiveFormat {
         case .cab: "Windows 压缩包 · 仅解压"
         case .cpio: "CPIO 归档 · 仅解压"
         case .lzh: "LHA 压缩包 · 仅解压"
-        case .lzma, .z, .lzop: "单个文件压缩 · 仅解压"
+        case .lzma, .z: "单个文件压缩 · 仅解压"
+        case .lzop: "单个文件 · 速度极快"
         }
     }
 }
 
-@MainActor
-private enum ArchiveBadgeCache {
-    /// Vector artwork retains full-size text instead of shrinking a document icon.
-    static let images: [String: NSImage] = Dictionary(uniqueKeysWithValues: ArchiveFormat.allCases.map { format in
-        let colors: [ArchiveFormat: UInt32] = [
-            .zip: 0x1D4ED8, .sevenZip: 0x6D28D9, .rar: 0xBE123C,
-            .tar: 0x475569, .tarGzip: 0x047857, .tarBzip2: 0x0E7490,
-            .tarXZ: 0x4338CA, .tarZstd: 0xC2410C,
-            .gzip: 0x15803D, .bzip2: 0x0369A1, .xz: 0x7E22CE,
-            .zstd: 0xA16207, .dmg: 0x92400E, .zipx: 0xA21CAF,
-            .lzip: 0x9D174D, .lz4: 0x365314, .brotli: 0x166534,
-            .lrzip: 0x4C1D95, .aar: 0x334155, .snappy: 0xB45309,
-            .wim: 0x075985, .iso: 0x52525B,
-            .cab: 0x9A3412, .cpio: 0x57534E, .lzh: 0x0F766E,
-            .lzma: 0x1E3A8A, .z: 0xB91C1C, .lzop: 0x854D0E
-        ]
-        let hex = colors[format]!
-        let color = NSColor(srgbRed: CGFloat((hex >> 16) & 255) / 255,
-                            green: CGFloat((hex >> 8) & 255) / 255,
-                            blue: CGFloat(hex & 255) / 255, alpha: 1)
-        let image = NSImage(size: NSSize(width: 70, height: 22), flipped: false) { bounds in
-            color.setFill()
-            NSBezierPath(roundedRect: bounds.insetBy(dx: 0.5, dy: 0.5), xRadius: 6, yRadius: 6).fill()
-            let text = NSAttributedString(string: format.title, attributes: [
-                .font: NSFont.monospacedSystemFont(ofSize: 12, weight: .bold),
-                .foregroundColor: NSColor.white
-            ])
-            text.draw(at: NSPoint(x: (bounds.width - text.size().width) / 2,
-                                  y: (bounds.height - text.size().height) / 2))
-            return true
-        }
-        image.isTemplate = false
-        image.accessibilityDescription = format.title
-        return (format.rawValue, image)
-    })
-}
-
-@MainActor
-private enum ArchiveFileIconCache {
-    static var icons: [String: NSImage] = [:]
-    static func icon(for format: ArchiveFormat) -> NSImage {
-        if let cached = icons[format.rawValue] { return cached }
-        let image = Bundle.main.url(forResource: "Document-\(format.rawValue)", withExtension: "png")
-            .flatMap(NSImage.init(contentsOf:)) ?? format.menuBadge
-        image.isTemplate = false
-        image.accessibilityDescription = format.title
-        icons[format.rawValue] = image
-        return image
+/// Coloured tag naming a format. It is only as wide as its text and uses continuous
+/// (superellipse) corners, like the app icon and the cards around it.
+struct FormatBadge: View {
+    let format: ArchiveFormat
+    /// Text size in points; height, padding and corners scale with it.
+    var size: CGFloat = 10
+    var body: some View {
+        Text(format.title)
+            .font(.system(size: size, weight: .bold))
+            .tracking(size * 0.03)
+            .foregroundStyle(.white)
+            .lineLimit(1)
+            .padding(.horizontal, size * 0.6)
+            .frame(minWidth: size * 2.8, minHeight: size * 1.65)
+            .background(RoundedRectangle(cornerRadius: size * 0.45, style: .continuous).fill(format.badgeColor))
+            .fixedSize()
+            .accessibilityHidden(true)
     }
 }
