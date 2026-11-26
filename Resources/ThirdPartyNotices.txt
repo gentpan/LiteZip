@@ -181,9 +181,9 @@ ANY THEORY OF LIABILITY, WHETHER IN CONTRACT, STRICT LIABILITY, OR TORT
 (INCLUDING NEGLIGENCE OR OTHERWISE) ARISING IN ANY WAY OUT OF THE USE OF THIS
 SOFTWARE, EVEN IF ADVISED OF THE POSSIBILITY OF SUCH DAMAGE.
 
-Zstandard 1.5.7, Copyright (c) Meta Platforms, Inc. and affiliates.
+Zstandard 1.6.0, Copyright (c) Meta Platforms, Inc. and affiliates.
 LiteZip uses the BSD license option. Built as a separate universal executable.
-Source: https://github.com/facebook/zstd/releases/tag/v1.5.7
+Source: https://github.com/facebook/zstd/releases/tag/v1.6.0
 Build configuration and archive hashes: Vendor/README.md
 
 Additional standalone stream engines (unmodified upstream source):

@@ -10,15 +10,15 @@
 - LGPL 2.1+ and unRAR restrictions plus listed component licenses. Read `7zip/License.txt`.
 - The bundled executable can be replaced by a compatible user-built executable.
 
-## Zstandard 1.5.7
+## Zstandard 1.6.0
 
-- Source: https://github.com/facebook/zstd/releases/download/v1.5.7/zstd-1.5.7.tar.gz
-- Source package SHA-256: `eb33e51f49a15e023950cd7825ca74a4a2b43db8354825ac24fc1b7ee09e6fa3`
+- Source: https://github.com/facebook/zstd/releases/download/v1.6.0/zstd-1.6.0.tar.gz
+- Source package SHA-256: `2ba599ae2a257976278e7e71e998433a387bfd18aa7b78678229fd5d84f5e9b8`
 - BSD license option: `zstd/LICENSE`.
 - Standalone universal executable, linked only to system `libSystem`, built from the unmodified source using:
 
 ```sh
-make -C zstd-1.5.7/programs -j4 zstd \
+make -C zstd-1.6.0/programs -j4 zstd \
   HAVE_ZLIB=0 HAVE_LZMA=0 HAVE_LZ4=0 ZSTD_NO_ASM=1 \
   CFLAGS='-O2 -arch arm64 -arch x86_64 -mmacosx-version-min=13.0' \
   LDFLAGS='-arch arm64 -arch x86_64 -mmacosx-version-min=13.0'

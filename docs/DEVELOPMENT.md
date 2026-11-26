@@ -101,3 +101,10 @@ ISO、SIT/SITX、CPIO/XAR/XIP 等放到后续兼容性批次。先根据真实�
 - 只改 `Scripts/build-format-engines.sh` 中的版本号与 SHA-256：1.2.1 的源码布局和编译参数（`-DBROTLI_BUILD_PORTABLE`，`c/common`、`c/enc`、`c/dec`、`c/tools/brotli.c`）与 1.2.0 一致，重建后仍只链接 `libSystem`。
 - 1.2.1 的 LICENSE 与 1.2.0 逐字节相同，`Vendor/Formats/Licenses/brotli.txt` 不变；随包源码换成 `brotli-1.2.1.tar.gz`，第三方声明与 `Vendor/Formats/README.md` 同步版本。
 - 引擎调用参数未变（压缩 `-c -q <level> --`，解压 `-d -c --`），`StandaloneFormats.swift` 无需修改。
+
+## 0.6.3：Zstandard 安全升级
+
+- Issue #5 指出 Zstandard 1.5.7 存在漏洞。上游 1.6.0 的发布说明记录 `CVE-2026-124851`（流式解压畸形数据时可能暴露未初始化内存），并修复多线程压缩可能写出错误数据或损坏帧等问题。
+- 内置 `zstd` 只用于创建 `.zst` 与 `.tar.zst`（`-q -T2 -<level> -o <out> --`）；解压 ZSTD 由内置 7-Zip 处理，因此该 CVE 不在 LiteZip 的解压路径上，但压缩侧的修复与 `-T2` 直接相关。
+- 用 `Vendor/README.md` 中原有的编译参数从未改动的 1.6.0 源码重建，仍为 arm64 + x86_64、只链接 `libSystem`、最低 macOS 13.0；LICENSE 与 1.5.7 逐字节相同，`Vendor/zstd/LICENSE` 不变。
+- 1.6.0 默认关闭旧版（v0.x）帧格式支持，沿用上游默认；App 不用 `zstd` 解压，不受影响。调用参数未变，Swift 代码无需修改。

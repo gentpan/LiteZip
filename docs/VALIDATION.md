@@ -140,3 +140,14 @@
 - 本机构建中逐项截图核对：主窗口与选项面板（深浅色）、任务卡片与竖条进度条（真实压缩，深浅色各一次）、菜单栏图标与进度圆环、设置五页、关于页。`litezip://` 解压、压缩与设置链接不再弹出主窗口；「在 LiteZip 中打开…」与用 LiteZip 打开普通文件仍会显示主窗口，均已实测。
 - 最终 ZIP 大小 39,042,080 字节，SHA-256：`4c5c5f8d53fc87d7921d585396db4c62928c58691f2ca49fb5fb6c759df5be59`。
 - 未实际验证：菜单栏弹窗本身（无法自动点开，布局以离屏渲染核对）；快捷压缩保存框里的格式选择（以独立程序核对菜单内容与禁用项）；「登录时自动启动」在实际重新登录后的效果；RAR 官方引擎的实际下载与运行；Intel 真机。本次保持开发预览标记。
+
+## 0.6.3 发布验证
+
+- Release 通用构建成功，Info.plist 为 0.6.3（build 9）；包内 `Engine/zstd` 与 `Vendor/zstd/zstd` 逐字节一致。
+- 核心测试 60 项、9 组全部通过；发布脚本 4 组检查通过。
+- Zstandard 1.6.0 源码包 SHA-256 `2ba599ae2a257976278e7e71e998433a387bfd18aa7b78678229fd5d84f5e9b8` 与上游 `.sha256` 文件及 GitHub 记录的摘要一致；LICENSE 与 1.5.7 逐字节相同。
+- 内置 zstd `--version` 输出 v1.6.0，`lipo` 为 x86_64 + arm64，`otool -L` 只依赖 `/usr/lib/libSystem.B.dylib`，最低系统 macOS 13.0。用 App 实际参数（`-q -T2 -<level> -o <out> --`，等级 1、3、9、19）对 20 MB 随机数据与中文文本压缩，再分别用内置 7-Zip 与 zstd 解压，字节比对一致；x86_64 切片（Rosetta）输出同样可由 7-Zip 正确解压。
+- Apple 公证提交 `33555fd3-4ea0-4066-a5de-ca0d73d4d07f` 返回 `Accepted`；`stapler staple` 与 `validate` 通过。
+- 对最终 ZIP 重新解包，签名、公证凭据及 Gatekeeper 检查均通过，来源 `Notarized Developer ID`，签名机构 `Developer ID Application: GiantAccel, LLC (WPDUNPG5N8)`；内置 zstd 启用 Hardened Runtime。
+- 最终 ZIP 大小 38,973,150 字节，SHA-256：`a956a088516cc4fd588ab793ee61b0f82a3616262e69a3ddb3287c8ea254a73b`。
+- 未实际验证：在已安装 App 中通过界面创建 `.zst`／`.tar.zst`；Intel 真机。本次保持开发预览标记。
